@@ -23,12 +23,13 @@ where
 
 #[tokio::main]
 async fn main() {
-    let template = include_str!("../templates/poll.html");
+    let poll_template = include_str!("../templates/poll.hbs");
+    let poll_new_template = include_str!("../templates/poll_new.hbs");
 
     let mut hb = Handlebars::new();
-    // register the template
-    hb.register_template_string("template.html", template)
-        .unwrap();
+    // register the templates
+    hb.register_template_string("poll.hbs", poll_template).unwrap();
+    hb.register_template_string("poll_new.hbs", poll_new_template).unwrap();
 
     // Turn Handlebars instance into a Filter so we can combine it
     // easily with others...
@@ -37,14 +38,30 @@ async fn main() {
     // Create a reusable closure to render template
     let handlebars = move |with_template| render(with_template, hb.clone());
 
-    let hello = warp::path!("poll" / String)
+    let view_poll = warp::path!("poll" / String)
         .map(|name| WithTemplate {
-            name: "template.html",
-            value: json!({"user" : name}),
+            name: "poll.hbs",
+            value: json!({
+                "poll_title" : name,
+                "options": ["one", "two", "three"],
+            }),
         })
-        .map(handlebars);
+        .map(handlebars.clone());
+    let new_poll = warp::path!("poll" / "new")
+        .map(|| WithTemplate {
+            name: "poll_new.hbs",
+            value: json!({
+                "poll_id": "id",
+                "poll_title": "temo",
+                "options": ["one", "two", "three"],
+                "require_name": true,
+            }),
+        })
+        .map(handlebars.clone());
 
-    let server = warp::serve(hello).run(([127, 0, 0, 1], 3030));
+    let routes = new_poll.or(view_poll);
+
+    let server = warp::serve(routes).run(([127, 0, 0, 1], 3030));
     println!("Listening on localhost:3030");
     server.await;
 }
