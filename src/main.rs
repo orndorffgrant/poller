@@ -37,13 +37,15 @@ VALUES (?1, ?2)
     .execute(&mut conn)
     .await.map_err(|_err| warp::reject())?;
 
-    Ok(warp::redirect::temporary(Uri::from_static("/poll/hello")))
+    let uri: String = "/poll/".to_string() + &new_id;
+    Ok(warp::redirect::temporary(uri.parse::<Uri>().unwrap()))
 }
 
 async fn render_poll(id: String, pool: SqlitePool, hbs: Arc<Handlebars<'_>>) -> Result<impl warp::Reply, warp::Rejection> {
     let mut conn = pool.acquire().await.map_err(|_err| warp::reject::reject())?;
 
     let p = sqlx::query!(
+    // let p_opt = sqlx::query!(
         r#"
         SELECT id, title
         FROM polls
@@ -52,17 +54,22 @@ async fn render_poll(id: String, pool: SqlitePool, hbs: Arc<Handlebars<'_>>) -> 
         id
     )
     .fetch_one(&mut conn)
+    // .fetch_optional(&mut conn)
     .await.map_err(|_err| warp::reject())?;
     // probably failed above ^
 
-    Ok(render(WithTemplate {
-        name: "poll.hbs",
-        value: json!({
-            "poll_title" : p.title,
-            "options": ["one", "two", "three"],
-        }),
+    // if let Some(p) = p_opt {
+        Ok(render(WithTemplate {
+            name: "poll.hbs",
+            value: json!({
+                "poll_title" : p.title,
+                "options": ["one", "two", "three"],
+            }),
 
-    }, hbs))
+        }, hbs))
+    // } else {
+    //     Ok(warp::reply())
+    // }
 }
 
 #[tokio::main]
