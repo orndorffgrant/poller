@@ -23,7 +23,14 @@ where
     warp::reply::html(render)
 }
 
-async fn new_poll(pool: SqlitePool) -> Result<impl warp::Reply, warp::Rejection> {
+async fn render_home(_pool: SqlitePool, hbs: Arc<Handlebars<'_>>) -> Result<impl warp::Reply, warp::Rejection> {
+    Ok(render(WithTemplate {
+        name: "home",
+        value: json!({}),
+    }, hbs))
+}
+
+async fn new_poll(pool: SqlitePool, _hbs: Arc<Handlebars<'_>>) -> Result<impl warp::Reply, warp::Rejection> {
     let mut conn = pool.acquire().await.map_err(|_err| warp::reject::reject())?;
     let new_id: String = rand::thread_rng().sample_iter(&Alphanumeric).take(10).map(char::from).collect();
     sqlx::query!(
@@ -37,15 +44,14 @@ VALUES (?1, ?2)
     .execute(&mut conn)
     .await.map_err(|_err| warp::reject())?;
 
-    let uri: String = "/poll/".to_string() + &new_id;
+    let uri: String = "/poll/".to_string() + &new_id + "/edit";
     Ok(warp::redirect::temporary(uri.parse::<Uri>().unwrap()))
 }
 
-async fn render_poll(id: String, pool: SqlitePool, hbs: Arc<Handlebars<'_>>) -> Result<impl warp::Reply, warp::Rejection> {
-    let mut conn = pool.acquire().await.map_err(|_err| warp::reject::reject())?;
+async fn render_poll_edit(pool: SqlitePool, hbs: Arc<Handlebars<'_>>, id: String) -> Result<impl warp::Reply, warp::Rejection> {
+    let mut conn = pool.acquire().await.map_err(|_err| warp::reject())?;
 
-    let p = sqlx::query!(
-    // let p_opt = sqlx::query!(
+    let p_opt = sqlx::query!(
         r#"
         SELECT id, title
         FROM polls
@@ -53,56 +59,81 @@ async fn render_poll(id: String, pool: SqlitePool, hbs: Arc<Handlebars<'_>>) -> 
         "#,
         id
     )
-    .fetch_one(&mut conn)
-    // .fetch_optional(&mut conn)
+    .fetch_optional(&mut conn)
     .await.map_err(|_err| warp::reject())?;
-    // probably failed above ^
 
-    // if let Some(p) = p_opt {
+    if let Some(p) = p_opt {
         Ok(render(WithTemplate {
-            name: "poll.hbs",
+            name: "poll_edit",
             value: json!({
                 "poll_title" : p.title,
                 "options": ["one", "two", "three"],
             }),
 
         }, hbs))
-    // } else {
-    //     Ok(warp::reply())
-    // }
+    } else {
+        Err(warp::reject::not_found())
+    }
+}
+
+async fn render_poll(pool: SqlitePool, hbs: Arc<Handlebars<'_>>, id: String) -> Result<impl warp::Reply, warp::Rejection> {
+    let mut conn = pool.acquire().await.map_err(|_err| warp::reject())?;
+
+    let p_opt = sqlx::query!(
+        r#"
+        SELECT id, title
+        FROM polls
+        WHERE id = ?1
+        "#,
+        id
+    )
+    .fetch_optional(&mut conn)
+    .await.map_err(|_err| warp::reject())?;
+
+    if let Some(p) = p_opt {
+        Ok(render(WithTemplate {
+            name: "poll",
+            value: json!({
+                "poll_title" : p.title,
+                "options": ["one", "two", "three"],
+            }),
+
+        }, hbs))
+    } else {
+        Err(warp::reject::not_found())
+    }
 }
 
 #[tokio::main]
 async fn main() -> Result<()>{
-    // create a poll
     let pool = SqlitePool::connect("sqlite:dev.db").await?;
 
-    // real stuff
-    let poll_template = include_str!("../templates/poll.hbs");
-    let poll_new_template = include_str!("../templates/poll_new.hbs");
-
     let mut hb = Handlebars::new();
-    // register the templates
-    hb.register_template_string("poll.hbs", poll_template).unwrap();
-    hb.register_template_string("poll_new.hbs", poll_new_template).unwrap();
+    let home_template = include_str!("../templates/home.hbs");
+    hb.register_template_string("home", home_template).unwrap();
+    let poll_template = include_str!("../templates/poll.hbs");
+    hb.register_template_string("poll", poll_template).unwrap();
+    let poll_edit_template = include_str!("../templates/poll_edit.hbs");
+    hb.register_template_string("poll_edit", poll_edit_template).unwrap();
 
-    // Turn Handlebars instance into a Filter so we can combine it
-    // easily with others...
     let hb = Arc::new(hb);
+    let db_provider = warp::any().map(move || pool.clone());
+    let hbs_provider = warp::any().map(move || hb.clone());
+    let root = db_provider.and(hbs_provider);
 
-    // Create a reusable closure to render template
-    // let handlebars = move |with_template| render(with_template, hb.clone());
-    let provide_pool = move || pool.clone();
-
-    let view_poll = warp::path!("poll" / String)
-        .and(warp::any().map(provide_pool.clone()))
-        .and(warp::any().map(move || hb.clone()))
+    let home = root.clone().and(warp::path::end())
+        .and_then(render_home);
+    let view_poll = root.clone().and(warp::path!("poll" / String))
         .and_then(render_poll);
-    let new_poll = warp::path!("poll" / "new")
-        .and(warp::any().map(provide_pool.clone()))
+    let edit_poll = root.clone().and(warp::path!("poll" / String / "edit"))
+        .and_then(render_poll_edit);
+    let new_poll = root.clone().and(warp::path!("poll" / "new"))
         .and_then(new_poll);
 
-    let routes = new_poll.or(view_poll);
+    let routes = home
+        .or(new_poll)
+        .or(view_poll)
+        .or(edit_poll);
 
     let server = warp::serve(routes).run(([127, 0, 0, 1], 3030));
     println!("Listening on localhost:3030");
