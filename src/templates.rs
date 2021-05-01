@@ -19,7 +19,7 @@ where
     warp::reply::html(render)
 }
 
-pub fn init<'a>() -> Result<impl Clone + Fn() -> Arc<Handlebars<'a>>> {
+pub fn init<'a>() -> Result<Arc<Handlebars<'a>>> {
     let mut hb = Handlebars::new();
     let home_template = include_str!("../templates/home.hbs");
     hb.register_template_string("home", home_template).unwrap();
@@ -32,5 +32,5 @@ pub fn init<'a>() -> Result<impl Clone + Fn() -> Arc<Handlebars<'a>>> {
     // let hbs_provider = warp::any().map(move || hb.clone());
     let hbs_provider = move || hb.clone();
 
-    Ok(hbs_provider)
+    Ok(hb)
 }

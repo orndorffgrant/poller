@@ -1,5 +1,4 @@
-add diesel and sqlite and post endpoint for creating poll
-- Get request to /poll/new 
-- create poll and redirect to /poll/:id to edit it
+switch from warp to tide (I somehow managed to pick the least ergonomic web library ugh)
+tide has plugins for sqlx and for templating so just reconsider everything i guess
 render poll with htmx
 refactor all of the above
