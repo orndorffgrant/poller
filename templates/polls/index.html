@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+
+{% block title %}Polls{% endblock %}
+
+{% block content %}
+<h1>Polls</h1>
+
+<ul>
+  {% for poll in polls %}
+  <li>
+    <a href="/poll/{{poll.id}}">
+      {{poll.title}}
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+
+<a href="/poll/new">new poll</a>
+{% endblock %}

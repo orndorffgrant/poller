@@ -1,4 +1,3 @@
-switch from warp to tide (I somehow managed to pick the least ergonomic web library ugh)
-tide has plugins for sqlx and for templating so just reconsider everything i guess
+consider tide_sqlx plugin
+do sqlx migration/align poll record with schema
 render poll with htmx
-refactor all of the above

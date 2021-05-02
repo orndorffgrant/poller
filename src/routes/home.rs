@@ -1,13 +1,5 @@
-use std::sync::Arc;
+use crate::templates::home::*;
 
-use handlebars::Handlebars;
-use serde_json::json;
-use sqlx::SqlitePool;
-
-use crate::templates::{WithTemplate, render};
-pub async fn render_home(_pool: SqlitePool, hbs: Arc<Handlebars<'_>>) -> Result<impl warp::Reply, warp::Rejection> {
-    Ok(render(WithTemplate {
-        name: "home",
-        value: json!({}),
-    }, hbs))
+pub async fn home(_request: crate::Request) -> tide::Result {
+    Ok(HomeTemplate::new("Poller").into())
 }
