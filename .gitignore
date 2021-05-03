@@ -10,6 +10,4 @@ Cargo.lock
 **/*.rs.bk
 
 
-# Added by cargo
-
-/target
+dev.db*

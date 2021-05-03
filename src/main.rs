@@ -28,13 +28,28 @@ pub type Request = tide::Request<State>;
 //     ))
 // }
 
+async fn assets_styles(_r: Request) -> tide::Result {
+    let content = include_str!("../assets/styles.css");
+    Ok(
+        tide::Response::builder(200)
+        .content_type(tide::http::mime::CSS)
+        .body(content)
+        .build()
+    )
+}
+
 #[async_std::main]
 async fn main() -> tide::Result<()> {
     tide::log::with_level(tide::log::LevelFilter::Info);
     let db = SqlitePool::connect("dev.db").await?;
+
+
+
     let mut app = tide::with_state(State { db: db.clone() });
 
     // app.with(build_session_middleware(db).await?);
+
+    app.at("/assets/styles.css").get( assets_styles);
 
     app.at("/").get(Redirect::new("/home"));
 

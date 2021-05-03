@@ -1,10 +1,21 @@
 {% extends "layout.html" %}
 
-{% block title %}Polls{% endblock %}
-
 {% block content %}
-<div>
-  <label for="title">title</label>
-  <input type="text" id="title" name="title" value="{{title}}">
+<div id="form">
+  <div class="">
+    <label class="" for="title">title</label>
+  </div>
+  <div class="edit-poll__title-container">
+    <input type="text" id="title" name="title" value="{{title}}">
+  </div>
+  <div>
+    <label for="require_name">require_name</label>
+  </div>
+  <div>
+    <input type="checkbox" id="require_name" name="require_name" {% if require_name %} checked {% endif %}>
+  </div>
 </div>
+<button hx-post="/poll/{{id}}" hx-swap="#form">
+  Save
+</button>
 {% endblock %}
