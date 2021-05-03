@@ -11,23 +11,3 @@ where
         )),
     }
 }
-
-pub trait AsRoute {
-    fn as_route(&self) -> std::borrow::Cow<str>;
-}
-
-impl AsRoute for str {
-    fn as_route(&self) -> std::borrow::Cow<str> {
-        self.into()
-    }
-}
-
-impl AsRoute for String {
-    fn as_route(&self) -> std::borrow::Cow<str> {
-        self.into()
-    }
-}
-
-// pub fn redirect_to(record: impl AsRoute) -> tide::Response {
-//     tide::Redirect::new(record.as_route()).into()
-// }

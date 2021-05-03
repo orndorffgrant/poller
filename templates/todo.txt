@@ -1,3 +1,4 @@
 consider tide_sqlx plugin
+move sqlx into routes, dont use records, it doesnt fit anyway
 do sqlx migration/align poll record with schema
 render poll with htmx
