@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "develop": "NODE_ENV=production nodemon --watch . --watch ../templates -e js,mjs,json,css,html node_modules/.bin/postcss src/styles.css -o ../assets/styles.css",
+    "build": "NODE_ENV=production postcss src/styles.css -o ../assets/styles.css"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.2.5",
+    "nodemon": "^2.0.7",
+    "postcss": "^8.2.13",
+    "postcss-cli": "^8.3.1",
+    "tailwindcss": "^2.1.2"
+  }
+}
