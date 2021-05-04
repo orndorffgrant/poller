@@ -1,21 +1,30 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div id="form">
-  <div class="">
-    <label class="m-auto" for="title">title</label>
+<div id="form" class="pt-8">
+  <div class="flex justify-center">
+    <label class="" for="title">Poll Question</label>
   </div>
-  <div class="">
-    <input type="text" id="title" name="title" value="{{title}}">
+  <div class="flex justify-center">
+    <input class="min-w-0 w-80 max-w-full" type="text" id="title" name="title" value="{{title}}">
   </div>
-  <div>
-    <label for="require_name">require_name</label>
+  <div class="flex justify-center pt-6">
+    <label class="" for="description">Description (optional)</label>
   </div>
-  <div>
+  <div class="flex justify-center">
+    <textarea class="min-w-0 w-80 max-w-full" type="text" id="description" name="description" value="{{title}}">
+    </textarea>
+  </div>
+  <div class="flex justify-center pt-6">
+    <label for="require_name">Require participants to give their name?</label>
+  </div>
+  <div class="flex justify-center">
     <input type="checkbox" id="require_name" name="require_name" {% if require_name %} checked {% endif %}>
   </div>
+  <div class="flex justify-center pt-8">
+    <button class="min-w-10" hx-put="/poll/{{id}}" hx-swap="#form">
+      Save
+    </button>
+  </div>
 </div>
-<button hx-post="/poll/{{id}}" hx-swap="#form">
-  Save
-</button>
 {% endblock %}

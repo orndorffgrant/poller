@@ -8,11 +8,12 @@ pub async fn new(request: crate::Request) -> tide::Result {
     let new_id: String = rand::thread_rng().sample_iter(&Alphanumeric).take(10).map(char::from).collect();
     sqlx::query!(
         r#"
-        INSERT INTO polls (id, title)
-        VALUES (?1, ?2)
+        INSERT INTO polls (id, title, require_name)
+        VALUES (?1, ?2, ?3)
         "#,
         new_id,
-        "New Poll"
+        "What should this poll be called?",
+        false
     )
     .execute(&request.state().db)
     .await?;

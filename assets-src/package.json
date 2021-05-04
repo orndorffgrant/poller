@@ -1,6 +1,8 @@
 {
   "scripts": {
-    "develop": "NODE_ENV=production nodemon --watch . --watch ../templates -e js,mjs,json,css,html node_modules/.bin/postcss src/styles.css -o ../assets/styles.css",
+    "watch-develop": "nodemon --watch . -e css node_modules/.bin/postcss src/styles.css -o ../assets/styles.css",
+    "develop": "postcss src/styles.css -o ../assets/styles.css",
+    "watch-build": "NODE_ENV=production nodemon --watch . --watch ../templates -e js,mjs,json,css,html node_modules/.bin/postcss src/styles.css -o ../assets/styles.css",
     "build": "NODE_ENV=production postcss src/styles.css -o ../assets/styles.css"
   },
   "devDependencies": {
