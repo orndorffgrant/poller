@@ -37,6 +37,15 @@ async fn assets_styles(_r: Request) -> tide::Result {
         .build()
     )
 }
+async fn assets_htmx(_r: Request) -> tide::Result {
+    let content = include_str!("../assets/htmx.js");
+    Ok(
+        tide::Response::builder(200)
+        .content_type(tide::http::mime::JAVASCRIPT)
+        .body(content)
+        .build()
+    )
+}
 
 #[async_std::main]
 async fn main() -> tide::Result<()> {
@@ -50,6 +59,7 @@ async fn main() -> tide::Result<()> {
     // app.with(build_session_middleware(db).await?);
 
     app.at("/assets/styles.css").get( assets_styles);
+    app.at("/assets/htmx.js").get( assets_htmx);
 
     app.at("/").get(Redirect::new("/home"));
 

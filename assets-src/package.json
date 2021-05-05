@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "vendor-htmx": "curl https://unpkg.com/htmx.org@1.3.3/dist/htmx.min.js -o ../assets/htmx.js",
     "watch-develop": "nodemon --watch . -e css node_modules/.bin/postcss src/styles.css -o ../assets/styles.css",
     "develop": "postcss src/styles.css -o ../assets/styles.css",
     "watch-build": "NODE_ENV=production nodemon --watch . --watch ../templates -e js,mjs,json,css,html node_modules/.bin/postcss src/styles.css -o ../assets/styles.css",

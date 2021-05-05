@@ -1,8 +1,11 @@
-add description to polls table
 add save endpoint
 add url and copy button below save button
 add options table, add three to default new poll
 render options
 add option
+
+
 render poll with htmx
+go to results on submit, graph
+
 some type of prebuild script to make sure tailwind build is correct?

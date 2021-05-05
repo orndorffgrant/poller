@@ -34,10 +34,33 @@
     <meta name="theme-color" content="#FFFF00">
     {% block head %}{% endblock %}
   </head>
-  <body>
+  <body hx-ext="json-enc">
     <div class="flex justify-center font-mono p-2"><a href="/">poller</a></div>
     {% block content %}{% endblock %}
-    <script src="https://unpkg.com/htmx.org@1.3.3"></script>
-    <script src="/assets/script.js" type="module"></script>
+    <script src="/assets/htmx.js" type="module"></script>
+    <script type="module">
+htmx.defineExtension('json-enc', {
+  onEvent: function (name, evt) {
+    if (name === "htmx:configRequest") {
+      evt.detail.headers['Content-Type'] = "application/json";
+    }
+  },
+
+  encodeParameters : function(xhr, parameters, elt) {
+    xhr.overrideMimeType('text/json');
+    var newParams = Object.keys(parameters).map(function(k) {
+      if (parameters[k] == "__--true") {
+        parameters[k] = true;
+      }
+      return [k, parameters[k]];
+    }).reduce(function(obj, [k,v]) {
+      obj[k] = v;
+      return obj;
+    }, {});
+    return (JSON.stringify(newParams));
+  }
+});
+    </script>
+    <!-- TODO htmx extensions -->
   </body>
 </html>
