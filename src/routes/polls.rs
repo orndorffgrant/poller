@@ -2,6 +2,7 @@ use crate::templates::polls::*;
 use crate::templates::home::NotFoundTemplate;
 use rand::{Rng, distributions::Alphanumeric};
 use tide::Redirect;
+use serde::Deserialize;
 use sqlx::prelude::*;
 
 pub async fn new(request: crate::Request) -> tide::Result {
@@ -26,6 +27,7 @@ pub async fn new(request: crate::Request) -> tide::Result {
 struct Poll {
     id: String,
     title: String,
+    description: String,
     require_name: bool,
 }
 
@@ -34,7 +36,7 @@ pub async fn take_page(request: crate::Request) -> tide::Result {
     let p_opt = sqlx::query_as!(
         Poll,
         r#"
-        SELECT id, title, require_name
+        SELECT id, title, description, require_name
         FROM polls
         WHERE id = ?1
         "#,
@@ -58,7 +60,7 @@ pub async fn edit_page(request: crate::Request) -> tide::Result {
     let p_opt = sqlx::query_as!(
         Poll,
         r#"
-        SELECT id, title, require_name
+        SELECT id, title, description, require_name
         FROM polls
         WHERE id = ?1
         "#,
@@ -77,6 +79,7 @@ pub async fn edit_page(request: crate::Request) -> tide::Result {
             html_title: html_title.to_string(),
             id: p.id,
             title: p.title,
+            description: p.description,
             require_name: p.require_name
         }.into())
     } else {
@@ -87,6 +90,38 @@ pub async fn edit_page(request: crate::Request) -> tide::Result {
     }
 }
 
-// pub async fn edit_page_save(request: crate::Request) -> tide::Result {
+#[derive(Deserialize)]
+struct SavePollBody {
+    title: String,
+    description: String,
+    require_name: Option<bool>,
+}
+pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
+    let body: SavePollBody = request.body_json().await?;
+    let id = request.param("poll_id")?;
 
-// }
+    let require_name = body.require_name.unwrap_or(false);
+
+    sqlx::query!(
+        r#"
+        UPDATE polls SET
+        title = ?1,
+        description = ?2,
+        require_name = ?3
+        WHERE id = ?4
+        "#,
+        body.title,
+        body.description,
+        require_name,
+        id
+    )
+    .execute(&request.state().db)
+    .await?;
+
+    Ok(EditPageForm{
+        id: id.to_string(),
+        title: body.title,
+        description: body.description,
+        require_name: require_name
+    }.into())
+}

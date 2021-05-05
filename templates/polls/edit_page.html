@@ -2,32 +2,11 @@
 
 {% block content %}
 <form>
-  <div id="form" class="pt-8">
-    <div class="flex justify-center">
-      <label class="" for="title">Poll Question</label>
-    </div>
-    <div class="flex justify-center">
-      <input class="min-w-0 w-80 max-w-full" type="text" id="title" name="title" value="{{title}}">
-    </div>
-    <div class="flex justify-center pt-6">
-      <label class="" for="description">Description (optional)</label>
-    </div>
-    <div class="flex justify-center">
-      <textarea class="min-w-0 w-80 max-w-full" type="text" id="description" name="description" value="{{title}}">
-      </textarea>
-    </div>
-    <div class="flex justify-center pt-6">
-      <label for="require_name">Require participants to give their name?</label>
-    </div>
-    <div class="flex justify-center">
-      <input type="checkbox" id="require_name" name="require_name" value="__--true" {% if require_name %} checked {% endif %}>
-    </div>
-  </div>
+  {% include "edit_page_form.html" %}
   <div class="flex justify-center pt-8">
-    <button class="min-w-10" hx-put="/poll/{{id}}" hx-swap="#form" hx-params="title,description,require_name">
+    <button class="min-w-10" hx-put="/poll/{{id}}" hx-swap="#form">
       Save
     </button>
-
   </div>
 </form>
 {% endblock %}

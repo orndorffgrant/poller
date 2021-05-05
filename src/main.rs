@@ -71,6 +71,7 @@ async fn main() -> tide::Result<()> {
 
     let mut poll = polls.at("/:poll_id");
     poll.get(routes::polls::take_page);
+    poll.put(routes::polls::edit_page_save);
     poll.at("/edit").get(routes::polls::edit_page);
 
     app.listen("0.0.0.0:8000").await?;
