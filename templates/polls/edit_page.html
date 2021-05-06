@@ -4,9 +4,22 @@
 <form>
   {% include "edit_page_form.html" %}
   <div class="flex justify-center pt-8">
-    <button class="min-w-10" hx-put="/poll/{{id}}" hx-swap="#form">
+    <button
+      class="min-w-10"
+      hx-put="/poll/{{id}}"
+      hx-target="#form"
+      hx-swap="outerHTML"
+      hx-indicator="#save-indicator"
+      >
       Save
     </button>
   </div>
+  <div
+    id="save-indicator"
+    class="htmx-indicator flex justify-center pt-2"
+    >
+    Saving...
+  </div>
+  {% include "edit_page_publish.html" %}
 </form>
 {% endblock %}

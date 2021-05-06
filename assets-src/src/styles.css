@@ -11,3 +11,6 @@ button {
 .min-w-10 {
     min-width: 10rem;
 }
+.htmx-indicator {
+    transition: none !important;
+}

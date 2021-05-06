@@ -1,0 +1,17 @@
+<div id="publish" class="pt-4">
+  <div class="flex justify-center">
+    <button
+      class="min-w-10"
+      hx-post="/poll/{{id}}/toggle-publish"
+      hx-target="#publish"
+      hx-swap="outerHTML"
+      >
+      {% if published %} Unpublish {% else %} Publish {% endif %}
+    </button>
+  </div>
+  {% if published %}
+    <div class="flex justify-center">
+      <a href="/poll/{{id}}">Published here</a>
+    </div>
+  {% endif %}
+</div>

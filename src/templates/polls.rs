@@ -8,6 +8,7 @@ pub struct EditPage {
     pub title: String,
     pub description: String,
     pub require_name: bool,
+    pub published: bool,
 }
 #[derive(Template)]
 #[template(path = "polls/edit_page_form.html")]
@@ -16,6 +17,13 @@ pub struct EditPageForm {
     pub title: String,
     pub description: String,
     pub require_name: bool,
+}
+
+#[derive(Template)]
+#[template(path = "polls/edit_page_publish.html")]
+pub struct EditPagePublish {
+    pub id: String,
+    pub published: bool,
 }
 
 #[derive(Template)]

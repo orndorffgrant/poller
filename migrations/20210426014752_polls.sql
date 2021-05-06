@@ -3,5 +3,6 @@ CREATE TABLE IF NOT EXISTS polls
     id TEXT PRIMARY KEY NOT NULL,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    require_name BOOLEAN NOT NULL DEFAULT 1
+    require_name BOOLEAN NOT NULL DEFAULT 1,
+    published BOOLEAN NOT NULL DEFAULT 0
 );

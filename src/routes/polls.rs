@@ -29,6 +29,7 @@ struct Poll {
     title: String,
     description: String,
     require_name: bool,
+    published: bool,
 }
 
 pub async fn take_page(request: crate::Request) -> tide::Result {
@@ -36,7 +37,7 @@ pub async fn take_page(request: crate::Request) -> tide::Result {
     let p_opt = sqlx::query_as!(
         Poll,
         r#"
-        SELECT id, title, description, require_name
+        SELECT id, title, description, require_name, published
         FROM polls
         WHERE id = ?1
         "#,
@@ -60,7 +61,7 @@ pub async fn edit_page(request: crate::Request) -> tide::Result {
     let p_opt = sqlx::query_as!(
         Poll,
         r#"
-        SELECT id, title, description, require_name
+        SELECT id, title, description, require_name, published
         FROM polls
         WHERE id = ?1
         "#,
@@ -80,7 +81,8 @@ pub async fn edit_page(request: crate::Request) -> tide::Result {
             id: p.id,
             title: p.title,
             description: p.description,
-            require_name: p.require_name
+            require_name: p.require_name,
+            published: p.published,
         }.into())
     } else {
         Ok(tide::Response::builder(404)
@@ -123,5 +125,40 @@ pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
         title: body.title,
         description: body.description,
         require_name: require_name
+    }.into())
+}
+
+struct Published {
+    published: bool
+}
+pub async fn edit_page_toggle_publish(mut request: crate::Request) -> tide::Result {
+    let id = request.param("poll_id")?;
+
+    sqlx::query!(
+        r#"
+        UPDATE polls SET
+        published = ((published | 1) - (published & 1))
+        WHERE id = ?1
+        "#,
+        id
+    )
+    .execute(&request.state().db)
+    .await?;
+
+    let p = sqlx::query_as!(
+        Published,
+        r#"
+        SELECT published
+        FROM polls
+        WHERE id = ?1
+        "#,
+        id
+    )
+    .fetch_one(&request.state().db)
+    .await?;
+
+    Ok(EditPagePublish{
+        id: id.to_string(),
+        published: p.published,
     }.into())
 }

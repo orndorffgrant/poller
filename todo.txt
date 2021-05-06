@@ -1,11 +1,11 @@
-add save endpoint
-add publish url and copy button below save button
 add options table, add three to default new poll
 render options
 add option
-
+reorder options
 
 render poll with htmx
 go to results on submit, graph
+
+users, prompt to create user/password on first run when no users
 
 some type of prebuild script to make sure tailwind build is correct?
