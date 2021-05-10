@@ -12,6 +12,14 @@
             "label": "develop-app.sh",
             "type": "shell",
             "command": "bash develop-app.sh"
+        },
+        {
+            "label": "Develop",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "dependsOn":["develop-assets.sh", "develop-app.sh"]
         }
     ]
 }

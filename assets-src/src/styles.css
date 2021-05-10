@@ -8,6 +8,9 @@ textarea, input[type="text"] {
 button {
     @apply p-1 bg-black text-white border border-black rounded hover:shadow-lg hover:bg-white hover:text-black active:bg-gradient-to-r from-purple-800 via-pink-500 to-yellow-600 active:border-white active:text-white;
 }
+.link {
+    @apply text-purple-800 underline;
+}
 .min-w-10 {
     min-width: 10rem;
 }

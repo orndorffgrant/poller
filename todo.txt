@@ -3,9 +3,13 @@ render options
 add option
 reorder options
 
+one choice or multi select score
+
 render poll with htmx
 go to results on submit, graph
 
 users, prompt to create user/password on first run when no users
+
+combine all of version 0.1.0 into one migration script, name after version
 
 some type of prebuild script to make sure tailwind build is correct?

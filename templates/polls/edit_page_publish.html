@@ -1,4 +1,9 @@
 <div id="publish" class="pt-4">
+  {% if published %}
+    <div class="flex justify-center">
+      <a class="link" href="/poll/{{id}}">Published here</a>
+    </div>
+  {% endif %}
   <div class="flex justify-center">
     <button
       class="min-w-10"
@@ -9,9 +14,4 @@
       {% if published %} Unpublish {% else %} Publish {% endif %}
     </button>
   </div>
-  {% if published %}
-    <div class="flex justify-center">
-      <a href="/poll/{{id}}">Published here</a>
-    </div>
-  {% endif %}
 </div>

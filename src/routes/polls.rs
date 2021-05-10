@@ -19,6 +19,40 @@ pub async fn new(request: crate::Request) -> tide::Result {
     .execute(&request.state().db)
     .await?;
 
+    sqlx::query!(
+        r#"
+        INSERT INTO options (name, order_index, poll_id)
+        VALUES (?1, ?2, ?3)
+        "#,
+        "Option 1",
+        1024,
+        new_id,
+    )
+    .execute(&request.state().db)
+    .await?;
+    sqlx::query!(
+        r#"
+        INSERT INTO options (name, order_index, poll_id)
+        VALUES (?1, ?2, ?3)
+        "#,
+        "Option 2",
+        2048,
+        new_id,
+    )
+    .execute(&request.state().db)
+    .await?;
+    sqlx::query!(
+        r#"
+        INSERT INTO options (name, order_index, poll_id)
+        VALUES (?1, ?2, ?3)
+        "#,
+        "Option 3",
+        3072,
+        new_id,
+    )
+    .execute(&request.state().db)
+    .await?;
+
     let uri: String = "/poll/".to_string() + &new_id + "/edit";
     Ok(Redirect::temporary(uri).into())
 }
@@ -56,12 +90,30 @@ pub async fn take_page(request: crate::Request) -> tide::Result {
     }
 }
 
+#[derive(FromRow)]
+struct EditPagePollQueryResult {
+    id: String,
+    title: String,
+    description: String,
+    require_name: bool,
+    published: bool,
+}
+#[derive(FromRow)]
+struct EditPageOptionQueryResult {
+    id: i64,
+    name: String,
+}
 pub async fn edit_page(request: crate::Request) -> tide::Result {
     let id = request.param("poll_id")?;
     let p_opt = sqlx::query_as!(
-        Poll,
+        EditPagePollQueryResult,
         r#"
-        SELECT id, title, description, require_name, published
+        SELECT
+            id,
+            title,
+            description,
+            require_name,
+            published
         FROM polls
         WHERE id = ?1
         "#,
@@ -71,6 +123,19 @@ pub async fn edit_page(request: crate::Request) -> tide::Result {
     .await?;
 
     if let Some(p) = p_opt {
+        let options = sqlx::query_as!(
+            EditPageOptionQueryResult,
+            r#"
+            SELECT
+                id,
+                name
+            FROM options
+            WHERE poll_id = ?1
+            ORDER BY order_index
+            "#,
+            id
+        ).fetch_all(&request.state().db)
+        .await?;
         let html_title = if p.title.is_empty() {
             "New Poll"
         } else {
@@ -83,6 +148,7 @@ pub async fn edit_page(request: crate::Request) -> tide::Result {
             description: p.description,
             require_name: p.require_name,
             published: p.published,
+            options: options.iter().map(|o| { EditPageOption{ name: o.name.to_owned() }}).collect(),
         }.into())
     } else {
         Ok(tide::Response::builder(404)
@@ -120,11 +186,26 @@ pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
     .execute(&request.state().db)
     .await?;
 
+    let options = sqlx::query_as!(
+        EditPageOptionQueryResult,
+        r#"
+        SELECT
+            id,
+            name
+        FROM options
+        WHERE poll_id = ?1
+        ORDER BY order_index
+        "#,
+        id
+    ).fetch_all(&request.state().db)
+    .await?;
+
     Ok(EditPageForm{
         id: id.to_string(),
         title: body.title,
         description: body.description,
-        require_name: require_name
+        require_name: require_name,
+        options: options.iter().map(|o| { EditPageOption{ name: o.name.to_owned() }}).collect(),
     }.into())
 }
 

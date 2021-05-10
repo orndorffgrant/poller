@@ -36,4 +36,23 @@
       {% if require_name %} checked {% endif %}
       >
   </div>
+  <div class="flex justify-center">
+    <div>Answer Options:</div>
+  </div>
+  {% for option in options %}
+    <div class="flex justify-center pt-2">
+      <input
+        autocomplete="off"
+        class="min-w-0 w-80 max-w-full rounded-r-none"
+        type="text"
+        id="option-{{loop.index0}}"
+        name="option-{{loop.index0}}"
+        value="{{option.name}}"
+        >
+      <button class="rounded-l-none">✕</button>
+    </div>
+  {% endfor %}
+  <div class="flex justify-center pt-2">
+    <button>Add Option</button>
+  </div>
 </div>

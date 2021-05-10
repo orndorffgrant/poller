@@ -1,5 +1,8 @@
 use askama::Template;
 
+pub struct EditPageOption {
+    pub name: String,
+}
 #[derive(Template)]
 #[template(path = "polls/edit_page.html")]
 pub struct EditPage {
@@ -9,6 +12,7 @@ pub struct EditPage {
     pub description: String,
     pub require_name: bool,
     pub published: bool,
+    pub options: Vec<EditPageOption>,
 }
 #[derive(Template)]
 #[template(path = "polls/edit_page_form.html")]
@@ -17,6 +21,7 @@ pub struct EditPageForm {
     pub title: String,
     pub description: String,
     pub require_name: bool,
+    pub options: Vec<EditPageOption>,
 }
 
 #[derive(Template)]
