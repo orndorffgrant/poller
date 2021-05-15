@@ -75,6 +75,12 @@ async fn main() -> tide::Result<()> {
     poll.at("/edit").get(routes::polls::edit_page);
     poll.at("/toggle-publish").post(routes::polls::edit_page_toggle_publish);
 
+    let mut poll_options = poll.at("/option");
+    poll_options.post(routes::polls::edit_page_create_option);
+
+    let mut poll_option = poll_options.at("/:option_id");
+    poll_option.delete(routes::polls::edit_page_delete_option);
+
     app.listen("0.0.0.0:8000").await?;
     Ok(())
 }

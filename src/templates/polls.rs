@@ -1,6 +1,7 @@
 use askama::Template;
 
 pub struct EditPageOption {
+    pub id: i64,
     pub name: String,
 }
 #[derive(Template)]
@@ -23,7 +24,12 @@ pub struct EditPageForm {
     pub require_name: bool,
     pub options: Vec<EditPageOption>,
 }
-
+#[derive(Template)]
+#[template(path = "polls/edit_page_form_options.html")]
+pub struct EditPageFormOptions {
+    pub id: String,
+    pub options: Vec<EditPageOption>,
+}
 #[derive(Template)]
 #[template(path = "polls/edit_page_publish.html")]
 pub struct EditPagePublish {

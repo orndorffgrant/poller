@@ -1,0 +1,37 @@
+<div id="options">
+  <div class="flex justify-center pt-6">
+    <div>Answer Options:</div>
+  </div>
+  {% for option in options %}
+    <div class="flex justify-center pt-2">
+      <input
+        autocomplete="off"
+        class="min-w-0 w-80 max-w-full"
+        style="border-top-right-radius:0px;border-bottom-right-radius:0px;"
+        type="text"
+        id="option-{{option.id}}"
+        name="option-{{option.id}}"
+        value="{{option.name}}"
+        >
+      <button
+        aria-label="Delete Option"
+        class="p-1 bg-black text-white border border-l-0 border-black rounded-r hover:shadow-lg hover:bg-white hover:text-black active:bg-red-800 active:text-white"
+        hx-delete="/poll/{{id}}/option/{{option.id}}"
+        hx-target="#options"
+        hx-swap="outerHTML"
+        >
+        ✕
+      </button>
+    </div>
+  {% endfor %}
+  <div class="flex justify-center pt-2">
+    <button
+      class="button"
+      hx-post="/poll/{{id}}/option"
+      hx-target="#options"
+      hx-swap="outerHTML"
+      >
+      Add Option
+    </button>
+  </div>
+</div>

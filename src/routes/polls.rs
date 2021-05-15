@@ -22,30 +22,15 @@ pub async fn new(request: crate::Request) -> tide::Result {
     sqlx::query!(
         r#"
         INSERT INTO options (name, order_index, poll_id)
-        VALUES (?1, ?2, ?3)
+        VALUES
+            (?1, ?2, ?7),
+            (?3, ?4, ?7),
+            (?5, ?6, ?7)
         "#,
         "Option 1",
         1024,
-        new_id,
-    )
-    .execute(&request.state().db)
-    .await?;
-    sqlx::query!(
-        r#"
-        INSERT INTO options (name, order_index, poll_id)
-        VALUES (?1, ?2, ?3)
-        "#,
         "Option 2",
         2048,
-        new_id,
-    )
-    .execute(&request.state().db)
-    .await?;
-    sqlx::query!(
-        r#"
-        INSERT INTO options (name, order_index, poll_id)
-        VALUES (?1, ?2, ?3)
-        "#,
         "Option 3",
         3072,
         new_id,
@@ -148,7 +133,7 @@ pub async fn edit_page(request: crate::Request) -> tide::Result {
             description: p.description,
             require_name: p.require_name,
             published: p.published,
-            options: options.iter().map(|o| { EditPageOption{ name: o.name.to_owned() }}).collect(),
+            options: options.iter().map(|o| { EditPageOption{ id: o.id, name: o.name.to_owned() }}).collect(),
         }.into())
     } else {
         Ok(tide::Response::builder(404)
@@ -205,7 +190,104 @@ pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
         title: body.title,
         description: body.description,
         require_name: require_name,
-        options: options.iter().map(|o| { EditPageOption{ name: o.name.to_owned() }}).collect(),
+        options: options.iter().map(|o| { EditPageOption{ id: o.id, name: o.name.to_owned() }}).collect(),
+    }.into())
+}
+
+#[derive(FromRow)]
+struct HighestOrderIndexQueryResult {
+    order_index: i64
+}
+pub async fn edit_page_create_option(mut request: crate::Request) -> tide::Result {
+    let id = request.param("poll_id")?;
+
+    let highest_order_index_opt = sqlx::query_as!(
+        HighestOrderIndexQueryResult,
+        r#"
+        SELECT
+            order_index
+        FROM options
+        WHERE poll_id = ?1
+        ORDER BY order_index DESC
+        "#,
+        id
+    ).fetch_optional(&request.state().db)
+    .await?;
+
+    let highest_order_index = match highest_order_index_opt {
+        Some(order_index) => order_index.order_index,
+        None => 0,
+    };
+
+    let new_order_index = highest_order_index + 1024;
+
+    sqlx::query!(
+        r#"
+        INSERT INTO options (name, order_index, poll_id)
+        VALUES
+            (?1, ?2, ?3)
+        "#,
+        "",
+        new_order_index,
+        id,
+    )
+    .execute(&request.state().db)
+    .await?;
+
+    let options = sqlx::query_as!(
+        EditPageOptionQueryResult,
+        r#"
+        SELECT
+            id,
+            name
+        FROM options
+        WHERE poll_id = ?1
+        ORDER BY order_index
+        "#,
+        id
+    ).fetch_all(&request.state().db)
+    .await?;
+
+    Ok(EditPageFormOptions{
+        id: id.to_string(),
+        options: options.iter().map(|o| { EditPageOption{ id: o.id, name: o.name.to_owned() }}).collect(),
+    }.into())
+}
+
+pub async fn edit_page_delete_option(mut request: crate::Request) -> tide::Result {
+    let poll_id = request.param("poll_id")?;
+    let option_id = request.param("option_id")?;
+
+    sqlx::query!(
+        r#"
+        DELETE FROM options
+        WHERE
+            id = ?1
+            AND poll_id = ?2
+        "#,
+        option_id,
+        poll_id,
+    )
+    .execute(&request.state().db)
+    .await?;
+
+    let options = sqlx::query_as!(
+        EditPageOptionQueryResult,
+        r#"
+        SELECT
+            id,
+            name
+        FROM options
+        WHERE poll_id = ?1
+        ORDER BY order_index
+        "#,
+        poll_id
+    ).fetch_all(&request.state().db)
+    .await?;
+
+    Ok(EditPageFormOptions{
+        id: poll_id.to_string(),
+        options: options.iter().map(|o| { EditPageOption{ id: o.id, name: o.name.to_owned() }}).collect(),
     }.into())
 }
 
