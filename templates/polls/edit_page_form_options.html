@@ -10,8 +10,11 @@
         style="border-top-right-radius:0px;border-bottom-right-radius:0px;"
         type="text"
         id="option-{{option.id}}"
-        name="option-{{option.id}}"
+        name="name"
         value="{{option.name}}"
+        hx-patch="/poll/{{id}}/option/{{option.id}}"
+        hx-trigger="keyup changed delay:500ms"
+        hx-swap="none"
         >
       <button
         aria-label="Delete Option"

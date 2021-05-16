@@ -254,6 +254,33 @@ pub async fn edit_page_create_option(mut request: crate::Request) -> tide::Resul
     }.into())
 }
 
+#[derive(Deserialize)]
+struct OptionChangeBody {
+    name: String,
+}
+pub async fn edit_page_option_change(mut request: crate::Request) -> tide::Result {
+    let body: OptionChangeBody = request.body_json().await?;
+    let poll_id = request.param("poll_id")?;
+    let option_id = request.param("option_id")?;
+
+    sqlx::query!(
+        r#"
+        UPDATE options SET
+        name = ?1
+        WHERE
+            id = ?2
+            AND poll_id = ?3
+        "#,
+        body.name,
+        option_id,
+        poll_id,
+    )
+    .execute(&request.state().db)
+    .await?;
+
+    Ok(tide::Response::builder(201).build())
+}
+
 pub async fn edit_page_delete_option(mut request: crate::Request) -> tide::Result {
     let poll_id = request.param("poll_id")?;
     let option_id = request.param("option_id")?;

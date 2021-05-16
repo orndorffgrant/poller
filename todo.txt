@@ -1,11 +1,10 @@
-add options table, add three to default new poll
-render options
-add option
+redo options to adding/deleting/editing client side with alpinejs, save everything including options with save button
 reorder options
+unsaved changes status and leave confirm
 
-one choice or multi select score
+one choice or multi select or score: enum
 
-render poll with htmx
+render poll for taking
 go to results on submit, graph
 
 users, prompt to create user/password on first run when no users
