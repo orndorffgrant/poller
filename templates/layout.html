@@ -36,7 +36,10 @@
   </head>
   <body hx-ext="json-enc">
     <div class="flex justify-center font-mono p-2"><a href="/">poller</a></div>
+
     {% block content %}{% endblock %}
+
+    <script src="/assets/alpine.js" type="module"></script>
     <script src="/assets/htmx.js" type="module"></script>
     <script type="module">
 htmx.defineExtension('json-enc', {

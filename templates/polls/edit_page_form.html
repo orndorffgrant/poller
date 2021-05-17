@@ -5,7 +5,7 @@
   <div class="flex justify-center">
     <input
       autocomplete="off"
-      class="min-w-0 w-80 max-w-full"
+      class="poll-data min-w-0 w-80 max-w-full"
       type="text"
       id="title"
       name="title"
@@ -18,7 +18,7 @@
   <div class="flex justify-center">
     <textarea
       autocomplete="off"
-      class="min-w-0 w-80 max-w-full"
+      class="poll-data min-w-0 w-80 max-w-full"
       type="text"
       id="description"
       name="description"
@@ -30,11 +30,46 @@
   <div class="flex justify-center">
     <input
       type="checkbox"
+      class="poll-data"
       id="require_name"
       name="require_name"
       value="__--true"
       {% if require_name %} checked {% endif %}
       >
   </div>
-  {% include "edit_page_form_options.html" %}
+  <div x-data='{ options: {{options|json}} }'>
+    <div class="flex justify-center pt-6">
+      <div>Answer Options:</div>
+    </div>
+    <template x-for="(option, index) in options" x-bind:key="option">
+      <div>
+        <div class="flex justify-center pt-2" x-bind:id="option.name">
+          <input
+            autocomplete="off"
+            class="poll-data min-w-0 w-80 max-w-full"
+            style="border-top-right-radius:0px;border-bottom-right-radius:0px;"
+            type="text"
+            name="options"
+            x-bind:id='"option-" + option.id'
+            x-bind:value="option.name"
+            >
+          <button
+            aria-label="Delete Option"
+            class="p-1 bg-black text-white border border-l-0 border-black rounded-r hover:shadow-lg hover:bg-white hover:text-black active:bg-red-800 active:text-white"
+            x-on:click="options.splice(index, 1)"
+            >
+            ✕
+          </button>
+        </div>
+      </div>
+    </template>
+    <div class="flex justify-center pt-2">
+      <button
+        class="button"
+        x-on:click="options.push({ name: '' })"
+        >
+        Add Option
+      </button>
+    </div>
+  </div>
 </div>

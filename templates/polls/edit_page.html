@@ -6,6 +6,7 @@
   <button
     class="button min-w-10"
     hx-put="/poll/{{id}}"
+    hx-include=".poll-data"
     hx-target="#form"
     hx-swap="outerHTML"
     hx-indicator="#save-indicator"

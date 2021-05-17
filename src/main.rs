@@ -46,6 +46,15 @@ async fn assets_htmx(_r: Request) -> tide::Result {
         .build()
     )
 }
+async fn assets_alpine(_r: Request) -> tide::Result {
+    let content = include_str!("../assets/alpine.js");
+    Ok(
+        tide::Response::builder(200)
+        .content_type(tide::http::mime::JAVASCRIPT)
+        .body(content)
+        .build()
+    )
+}
 
 #[async_std::main]
 async fn main() -> tide::Result<()> {
@@ -60,6 +69,7 @@ async fn main() -> tide::Result<()> {
 
     app.at("/assets/styles.css").get( assets_styles);
     app.at("/assets/htmx.js").get( assets_htmx);
+    app.at("/assets/alpine.js").get( assets_alpine);
 
     app.at("/").get(Redirect::new("/home"));
 
@@ -74,13 +84,6 @@ async fn main() -> tide::Result<()> {
     poll.put(routes::polls::edit_page_save);
     poll.at("/edit").get(routes::polls::edit_page);
     poll.at("/toggle-publish").post(routes::polls::edit_page_toggle_publish);
-
-    let mut poll_options = poll.at("/option");
-    poll_options.post(routes::polls::edit_page_create_option);
-
-    let mut poll_option = poll_options.at("/:option_id");
-    poll_option.patch(routes::polls::edit_page_option_change);
-    poll_option.delete(routes::polls::edit_page_delete_option);
 
     app.listen("0.0.0.0:8000").await?;
     Ok(())

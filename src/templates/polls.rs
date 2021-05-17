@@ -1,5 +1,7 @@
 use askama::Template;
+use serde::Serialize;
 
+#[derive(Serialize)]
 pub struct EditPageOption {
     pub id: i64,
     pub name: String,
@@ -22,12 +24,6 @@ pub struct EditPageForm {
     pub title: String,
     pub description: String,
     pub require_name: bool,
-    pub options: Vec<EditPageOption>,
-}
-#[derive(Template)]
-#[template(path = "polls/edit_page_form_options.html")]
-pub struct EditPageFormOptions {
-    pub id: String,
     pub options: Vec<EditPageOption>,
 }
 #[derive(Template)]

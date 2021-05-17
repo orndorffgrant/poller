@@ -1,9 +1,12 @@
-use crate::templates::polls::*;
-use crate::templates::home::NotFoundTemplate;
+use std::convert::TryInto;
+
 use rand::{Rng, distributions::Alphanumeric};
 use tide::Redirect;
 use serde::Deserialize;
 use sqlx::prelude::*;
+
+use crate::templates::polls::*;
+use crate::templates::home::NotFoundTemplate;
 
 pub async fn new(request: crate::Request) -> tide::Result {
     let new_id: String = rand::thread_rng().sample_iter(&Alphanumeric).take(10).map(char::from).collect();
@@ -148,6 +151,7 @@ struct SavePollBody {
     title: String,
     description: String,
     require_name: Option<bool>,
+    options: Vec<String>,
 }
 pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
     let body: SavePollBody = request.body_json().await?;
@@ -166,10 +170,36 @@ pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
         body.title,
         body.description,
         require_name,
-        id
+        id,
     )
     .execute(&request.state().db)
     .await?;
+
+    sqlx::query!(
+        r#"
+        DELETE FROM options
+        WHERE poll_id = ?1
+        "#,
+        id,
+    )
+    .execute(&request.state().db)
+    .await?;
+
+    for (index, name) in body.options.iter().enumerate() {
+        let option_index: i64 = index.try_into()?;
+        sqlx::query!(
+            r#"
+            INSERT INTO options (name, order_index, poll_id)
+            VALUES (?1, ?2, ?3)
+            "#,
+            name,
+            option_index,
+            id,
+        )
+        .execute(&request.state().db)
+        .await?;
+    };
+
 
     let options = sqlx::query_as!(
         EditPageOptionQueryResult,
@@ -190,130 +220,6 @@ pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
         title: body.title,
         description: body.description,
         require_name: require_name,
-        options: options.iter().map(|o| { EditPageOption{ id: o.id, name: o.name.to_owned() }}).collect(),
-    }.into())
-}
-
-#[derive(FromRow)]
-struct HighestOrderIndexQueryResult {
-    order_index: i64
-}
-pub async fn edit_page_create_option(mut request: crate::Request) -> tide::Result {
-    let id = request.param("poll_id")?;
-
-    let highest_order_index_opt = sqlx::query_as!(
-        HighestOrderIndexQueryResult,
-        r#"
-        SELECT
-            order_index
-        FROM options
-        WHERE poll_id = ?1
-        ORDER BY order_index DESC
-        "#,
-        id
-    ).fetch_optional(&request.state().db)
-    .await?;
-
-    let highest_order_index = match highest_order_index_opt {
-        Some(order_index) => order_index.order_index,
-        None => 0,
-    };
-
-    let new_order_index = highest_order_index + 1024;
-
-    sqlx::query!(
-        r#"
-        INSERT INTO options (name, order_index, poll_id)
-        VALUES
-            (?1, ?2, ?3)
-        "#,
-        "",
-        new_order_index,
-        id,
-    )
-    .execute(&request.state().db)
-    .await?;
-
-    let options = sqlx::query_as!(
-        EditPageOptionQueryResult,
-        r#"
-        SELECT
-            id,
-            name
-        FROM options
-        WHERE poll_id = ?1
-        ORDER BY order_index
-        "#,
-        id
-    ).fetch_all(&request.state().db)
-    .await?;
-
-    Ok(EditPageFormOptions{
-        id: id.to_string(),
-        options: options.iter().map(|o| { EditPageOption{ id: o.id, name: o.name.to_owned() }}).collect(),
-    }.into())
-}
-
-#[derive(Deserialize)]
-struct OptionChangeBody {
-    name: String,
-}
-pub async fn edit_page_option_change(mut request: crate::Request) -> tide::Result {
-    let body: OptionChangeBody = request.body_json().await?;
-    let poll_id = request.param("poll_id")?;
-    let option_id = request.param("option_id")?;
-
-    sqlx::query!(
-        r#"
-        UPDATE options SET
-        name = ?1
-        WHERE
-            id = ?2
-            AND poll_id = ?3
-        "#,
-        body.name,
-        option_id,
-        poll_id,
-    )
-    .execute(&request.state().db)
-    .await?;
-
-    Ok(tide::Response::builder(201).build())
-}
-
-pub async fn edit_page_delete_option(mut request: crate::Request) -> tide::Result {
-    let poll_id = request.param("poll_id")?;
-    let option_id = request.param("option_id")?;
-
-    sqlx::query!(
-        r#"
-        DELETE FROM options
-        WHERE
-            id = ?1
-            AND poll_id = ?2
-        "#,
-        option_id,
-        poll_id,
-    )
-    .execute(&request.state().db)
-    .await?;
-
-    let options = sqlx::query_as!(
-        EditPageOptionQueryResult,
-        r#"
-        SELECT
-            id,
-            name
-        FROM options
-        WHERE poll_id = ?1
-        ORDER BY order_index
-        "#,
-        poll_id
-    ).fetch_all(&request.state().db)
-    .await?;
-
-    Ok(EditPageFormOptions{
-        id: poll_id.to_string(),
         options: options.iter().map(|o| { EditPageOption{ id: o.id, name: o.name.to_owned() }}).collect(),
     }.into())
 }
