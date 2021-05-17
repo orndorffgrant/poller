@@ -1,13 +1,12 @@
-redo options to adding/deleting/editing client side with alpinejs, save everything including options with save button
-reorder options
-unsaved changes status and leave confirm
-
 one choice or multi select or score: enum
+allow poll-takers to add options
 
 render poll for taking
 go to results on submit, graph
 
 users, prompt to create user/password on first run when no users
+
+edit page: unsaved changes status and leave confirm
 
 combine all of version 0.1.0 into one migration script, name after version
 
