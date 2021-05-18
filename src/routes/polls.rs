@@ -8,16 +8,43 @@ use sqlx::prelude::*;
 use crate::templates::polls::*;
 use crate::templates::home::NotFoundTemplate;
 
+const POLL_TYPE_SINGLE: &str = "single";
+const POLL_TYPE_MULTI: &str = "multi";
+const POLL_TYPE_SCORE: &str = "score";
+
+enum PollType {
+    Single,
+    Multi,
+    Score,
+}
+
+impl PollType {
+    fn from_string(str: &str) -> Result<PollType, std::error::Error> {
+        match str {
+            POLL_TYPE_SINGLE => Ok(PollType::Single),
+            POLL_TYPE_MULTI => Ok(PollType::Multi),
+            POLL_TYPE_SCORE => Ok(PollType::Score),
+            _ => Err(std::error::Error),
+        }
+    }
+}
+
 pub async fn new(request: crate::Request) -> tide::Result {
     let new_id: String = rand::thread_rng().sample_iter(&Alphanumeric).take(10).map(char::from).collect();
     sqlx::query!(
         r#"
-        INSERT INTO polls (id, title, description)
-        VALUES (?1, ?2, ?3)
+        INSERT INTO polls (
+            id,
+            title,
+            description,
+            poll_type
+        )
+        VALUES (?1, ?2, ?3, ?4)
         "#,
         new_id,
         "",
-        ""
+        "",
+        POLL_TYPE_SINGLE
     )
     .execute(&request.state().db)
     .await?;
