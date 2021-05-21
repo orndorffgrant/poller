@@ -1,5 +1,6 @@
 use std::convert::TryInto;
 
+use anyhow::Result;
 use rand::{Rng, distributions::Alphanumeric};
 use tide::Redirect;
 use serde::Deserialize;
@@ -19,12 +20,12 @@ enum PollType {
 }
 
 impl PollType {
-    fn from_string(str: &str) -> Result<PollType, std::error::Error> {
+    fn from_string(str: &str) -> Result<PollType> {
         match str {
             POLL_TYPE_SINGLE => Ok(PollType::Single),
             POLL_TYPE_MULTI => Ok(PollType::Multi),
             POLL_TYPE_SCORE => Ok(PollType::Score),
-            _ => Err(std::error::Error),
+            _ => Err(anyhow::Error::msg("invalid poll type")),
         }
     }
 }
@@ -111,6 +112,8 @@ struct EditPagePollQueryResult {
     title: String,
     description: String,
     require_name: bool,
+    allow_participant_options: bool,
+    poll_type: String,
     published: bool,
 }
 #[derive(FromRow)]
@@ -128,6 +131,8 @@ pub async fn edit_page(request: crate::Request) -> tide::Result {
             title,
             description,
             require_name,
+            allow_participant_options,
+            poll_type,
             published
         FROM polls
         WHERE id = ?1
@@ -178,6 +183,8 @@ struct SavePollBody {
     title: String,
     description: String,
     require_name: Option<bool>,
+    allow_participant_options: Option<bool>,
+    poll_type: String,
     options: Vec<String>,
 }
 pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
@@ -185,18 +192,23 @@ pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
     let id = request.param("poll_id")?;
 
     let require_name = body.require_name.unwrap_or(false);
+    let allow_participant_options = body.allow_participant_options.unwrap_or(false);
 
     sqlx::query!(
         r#"
         UPDATE polls SET
         title = ?1,
         description = ?2,
-        require_name = ?3
-        WHERE id = ?4
+        require_name = ?3,
+        allow_participant_options = ?4,
+        poll_type = ?5
+        WHERE id = ?6
         "#,
         body.title,
         body.description,
         require_name,
+        allow_participant_options,
+        body.poll_type,
         id,
     )
     .execute(&request.state().db)
