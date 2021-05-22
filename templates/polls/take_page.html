@@ -2,4 +2,18 @@
 
 {% block content %}
 <h1>{{title}}</h1>
+<div>{{description}}</div>
+{% if require_name %}
+<label>Name</label>
+<input>
+{% endif %}
+{% for option in options %}
+<div>{{option.name}}</div>
+{% endfor %}
+{% if allow_participant_options %}
+<label>add your own option</label>
+<input>
+<button>Add</button>
+{% endif %}
+<button>Submit</button>
 {% endblock %}

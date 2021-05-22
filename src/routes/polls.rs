@@ -74,20 +74,29 @@ pub async fn new(request: crate::Request) -> tide::Result {
 }
 
 #[derive(FromRow)]
-struct Poll {
+struct TakePagePollQueryResult {
     id: String,
     title: String,
     description: String,
     require_name: bool,
+    allow_participant_options: bool,
+    poll_type: String,
     published: bool,
 }
 
 pub async fn take_page(request: crate::Request) -> tide::Result {
     let id = request.param("poll_id")?;
     let p_opt = sqlx::query_as!(
-        Poll,
+        TakePagePollQueryResult,
         r#"
-        SELECT id, title, description, require_name, published
+        SELECT
+            id,
+            title,
+            description,
+            require_name,
+            allow_participant_options,
+            poll_type,
+            published
         FROM polls
         WHERE id = ?1
         "#,
@@ -97,7 +106,34 @@ pub async fn take_page(request: crate::Request) -> tide::Result {
     .await?;
 
     if let Some(p) = p_opt {
-        Ok(TakePage{html_title: p.title.to_string(), title: p.title, require_name: p.require_name}.into())
+        let options = sqlx::query_as!(
+            EditPageOptionQueryResult,
+            r#"
+            SELECT
+                id,
+                name
+            FROM options
+            WHERE poll_id = ?1
+            ORDER BY order_index
+            "#,
+            id
+        ).fetch_all(&request.state().db)
+        .await?;
+        let html_title = if p.title.is_empty() {
+            "New Poll"
+        } else {
+            &p.title
+        };
+        Ok(TakePage{
+            html_title: html_title.to_string(),
+            id: p.id,
+            title: p.title,
+            description: p.description,
+            require_name: p.require_name,
+            allow_participant_options: p.allow_participant_options,
+            poll_type: p.poll_type,
+            options: options.iter().map(|o| { EditPageOption{ id: o.id, name: o.name.to_owned() }}).collect(),
+        }.into())
     } else {
         Ok(tide::Response::builder(404)
             .body(NotFoundTemplate{html_title: "Not Found".to_string()}.to_string())

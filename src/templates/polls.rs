@@ -40,7 +40,12 @@ pub struct EditPagePublish {
 #[derive(Template)]
 #[template(path = "polls/take_page.html")]
 pub struct TakePage {
+    pub id: String,
     pub html_title: String,
     pub title: String,
+    pub description: String,
     pub require_name: bool,
+    pub allow_participant_options: bool,
+    pub poll_type: String,
+    pub options: Vec<EditPageOption>,
 }
