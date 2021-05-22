@@ -14,6 +14,8 @@ pub struct EditPage {
     pub title: String,
     pub description: String,
     pub require_name: bool,
+    pub allow_participant_options: bool,
+    pub poll_type: String,
     pub published: bool,
     pub options: Vec<EditPageOption>,
 }
@@ -24,6 +26,8 @@ pub struct EditPageForm {
     pub title: String,
     pub description: String,
     pub require_name: bool,
+    pub allow_participant_options: bool,
+    pub poll_type: String,
     pub options: Vec<EditPageOption>,
 }
 #[derive(Template)]

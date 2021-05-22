@@ -2,7 +2,11 @@ module.exports = {
   purge: ["../templates/**/*.html"],
   darkMode: false, // or 'media' or 'class'
   theme: {
-    extend: {},
+    extend: {
+      spacing: {
+        '18': '4.5rem'
+      }
+    },
   },
   variants: {
     extend: {
@@ -11,7 +15,8 @@ module.exports = {
       borderColor: ['active', 'hover', 'focus'],
       borderStyle: ['hover', 'focus'],
       borderWidth: ['hover', 'focus'],
-      margin: ['hover', 'focus'],
+      width: ['hover', 'focus'],
+      margin: ['active', 'hover', 'focus'],
       textColor: ['active']
     },
   },

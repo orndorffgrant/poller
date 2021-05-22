@@ -37,7 +37,76 @@
       {% if require_name %} checked {% endif %}
       >
   </div>
-  <div x-data='{ options: {{options|json}} }'>
+  <div class="flex justify-center pt-6">
+    <label for="allow_participant_options">Allow participants to add their own options?</label>
+  </div>
+  <div class="flex justify-center">
+    <input
+      type="checkbox"
+      class="poll-data"
+      id="allow_participant_options"
+      name="allow_participant_options"
+      value="__--true"
+      {% if allow_participant_options %} checked {% endif %}
+      >
+  </div>
+  <div class="flex justify-center pt-6">
+    What kind of poll is this?
+  </div>
+  <div class="max-w-sm m-auto pt-2">
+    <div class="flex">
+      <input
+        autocomplete="off"
+        type="radio"
+        class="poll-data"
+        id="poll_type-single"
+        name="poll_type"
+        value="single"
+        {% if poll_type == "single" %} checked {% endif %}
+        >
+      <label
+        for="poll_type-single"
+        class="pl-4"
+        >
+        Participants can select only one option
+      </label>
+    </div>
+    <div class="flex">
+      <input
+        autocomplete="off"
+        type="radio"
+        class="poll-data"
+        id="poll_type-multi"
+        name="poll_type"
+        value="multi"
+        {% if poll_type == "multi" %} checked {% endif %}
+        >
+      <label
+        for="poll_type-multi"
+        class="pl-4"
+        >
+        Participants can select multiple options
+      </label>
+    </div>
+    <div class="flex">
+      <input
+        autocomplete="off"
+        type="radio"
+        class="poll-data"
+        id="poll_type-score"
+        name="poll_type"
+        value="score"
+        {% if poll_type == "score" %} checked {% endif %}
+        >
+      <label
+        for="poll_type-score"
+        class="pl-4"
+        >
+        Participants can give each option a score
+      </label>
+    </div>
+  </div>
+  <div x-data='{ options: {{options|json}}, optionToBeDeleted: -1 }'>
     <div class="flex justify-center pt-6">
       <div>Answer Options:</div>
     </div>

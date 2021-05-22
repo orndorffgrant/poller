@@ -167,6 +167,8 @@ pub async fn edit_page(request: crate::Request) -> tide::Result {
             title: p.title,
             description: p.description,
             require_name: p.require_name,
+            allow_participant_options: p.allow_participant_options,
+            poll_type: p.poll_type,
             published: p.published,
             options: options.iter().map(|o| { EditPageOption{ id: o.id, name: o.name.to_owned() }}).collect(),
         }.into())
@@ -259,6 +261,8 @@ pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
         title: body.title,
         description: body.description,
         require_name: require_name,
+        allow_participant_options: allow_participant_options,
+        poll_type: body.poll_type,
         options: options.iter().map(|o| { EditPageOption{ id: o.id, name: o.name.to_owned() }}).collect(),
     }.into())
 }
