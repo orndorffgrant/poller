@@ -1,19 +1,70 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<h1>{{title}}</h1>
-<div>{{description}}</div>
-{% if require_name %}
-<label>Name</label>
-<input>
-{% endif %}
-{% for option in options %}
-<div>{{option.name}}</div>
-{% endfor %}
-{% if allow_participant_options %}
-<label>add your own option</label>
-<input>
-<button>Add</button>
-{% endif %}
-<button>Submit</button>
+<div class="max-w-xl m-auto flex flex-col items-center">
+    <h1 class="pt-6 text-2xl text-center">{{title}}</h1>
+    {% if description != "" %}
+        <div class="pt-4">{{description}}</div>
+    {% endif %}
+    <div class="pt-6 flex flex-col items-start">
+        {% for option in options %}
+            <div class="flex">
+                <input
+                    type="radio"
+                    class="poll-submission"
+                    id="option-{{option.id}}"
+                    name="selection"
+                    value="{{option.id}}"
+                    >
+                <label
+                    for="option-{{option.id}}"
+                    class="pl-4"
+                    >
+                    {{option.name}}
+                </label>
+            </div>
+        {% endfor %}
+        {% if allow_participant_options %}
+            <div class="flex">
+                <input
+                    type="radio"
+                    class="poll-submission"
+                    id="option-custom"
+                    name="selection"
+                    value="custom"
+                    >
+                <label
+                    for="option-custom"
+                    class="pl-4"
+                    >
+                    <input
+                        type="text"
+                        id="new_option"
+                        name="new_option"
+                        placeholder="Add your own answer"
+                        onclick="document.getElementById('option-custom').checked = true"
+                        onchange="document.getElementById('option-custom').checked = true"
+                        >
+                </label>
+            </div>
+        {% endif %}
+    </div>
+    {% if require_name %}
+        <label
+            for="participant_name"
+            class="pt-6"
+            >
+            What is your name? (required)
+        </label>
+        <input
+            type="text"
+            id="participant_name"
+            name="participant_name"
+            class="poll-submission"
+            >
+    {% endif %}
+    <div class="pt-6">
+        <button class="button min-w-10">Submit</button>
+    </div>
+</div>
 {% endblock %}
