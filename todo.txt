@@ -1,5 +1,6 @@
 render poll for taking
 allow poll-takers to add options, actual
+record selections (stop deleting all options on edit)
 go to results on submit, graph
 
 make published mean something

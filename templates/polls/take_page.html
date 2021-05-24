@@ -9,43 +9,122 @@
     <div class="pt-6 flex flex-col items-start">
         {% for option in options %}
             <div class="flex">
-                <input
-                    type="radio"
-                    class="poll-submission"
-                    id="option-{{option.id}}"
-                    name="selection"
-                    value="{{option.id}}"
-                    >
-                <label
-                    for="option-{{option.id}}"
-                    class="pl-4"
-                    >
-                    {{option.name}}
-                </label>
+                {% if poll_type == "single" %}
+                    <input
+                        type="radio"
+                        class="poll-submission"
+                        id="option-{{option.id}}"
+                        name="selection"
+                        value="{{option.id}}"
+                        >
+                    <label
+                        for="option-{{option.id}}"
+                        class="pl-4"
+                        >
+                        {{option.name}}
+                    </label>
+                {% else if poll_type == "multi" %}
+                    <input
+                        type="checkbox"
+                        class="poll-submission"
+                        id="option-{{option.id}}"
+                        name="selections"
+                        value="{{option.id}}"
+                        >
+                    <label
+                        for="option-{{option.id}}"
+                        class="pl-4"
+                        >
+                        {{option.name}}
+                    </label>
+                {% else if poll_type == "score" %}
+                    <!-- TODO submit id too value="{{option.id}}" -->
+                    <input
+                        type="range"
+                        class="poll-submission"
+                        id="option-{{option.id}}"
+                        name="scores"
+                        min="1"
+                        max="5"
+                        value="1"
+                        >
+                    <label
+                        for="option-{{option.id}}"
+                        class="pl-4"
+                        >
+                        {{option.name}}
+                    </label>
+                {% endif %}
             </div>
         {% endfor %}
         {% if allow_participant_options %}
             <div class="flex">
-                <input
-                    type="radio"
-                    class="poll-submission"
-                    id="option-custom"
-                    name="selection"
-                    value="custom"
-                    >
-                <label
-                    for="option-custom"
-                    class="pl-4"
-                    >
+                {% if poll_type == "single" %}
                     <input
-                        type="text"
-                        id="new_option"
-                        name="new_option"
-                        placeholder="Add your own answer"
-                        onclick="document.getElementById('option-custom').checked = true"
-                        onchange="document.getElementById('option-custom').checked = true"
+                        type="radio"
+                        class="poll-submission"
+                        id="option-custom"
+                        name="selection"
+                        value="custom"
                         >
-                </label>
+                    <label
+                        for="option-custom"
+                        class="pl-4"
+                        >
+                        <input
+                            type="text"
+                            id="new_option"
+                            name="new_option"
+                            placeholder="Add your own answer"
+                            onclick="document.getElementById('option-custom').checked = true"
+                            onchange="document.getElementById('option-custom').checked = true"
+                            >
+                    </label>
+                {% else if poll_type == "multi" %}
+                    <input
+                        type="checkbox"
+                        class="poll-submission"
+                        id="option-custom"
+                        name="selections"
+                        value="custom"
+                        >
+                    <label
+                        for="option-custom"
+                        class="pl-4"
+                        >
+                        <input
+                            type="text"
+                            id="new_option"
+                            name="new_option"
+                            placeholder="Add your own answer"
+                            onclick="document.getElementById('option-custom').checked = true"
+                            onchange="document.getElementById('option-custom').checked = true"
+                            >
+                    </label>
+                {% else if poll_type == "score" %}
+                    <input
+                        type="range"
+                        class="poll-submission"
+                        id="option-custom"
+                        name="scores"
+                        min="1"
+                        max="5"
+                        value="1"
+                        >
+                    <label
+                        for="option-custom"
+                        class="pl-4"
+                        >
+                        <input
+                            type="text"
+                            id="new_option"
+                            name="new_option"
+                            placeholder="Add your own answer"
+                            onclick="document.getElementById('option-custom').checked = true"
+                            onchange="document.getElementById('option-custom').checked = true"
+                            >
+                    </label>
+                {% endif %}
             </div>
         {% endif %}
     </div>
