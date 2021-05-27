@@ -1,15 +1,31 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="max-w-xl m-auto flex flex-col items-center">
+<div class="max-w-sm px-4 pb-10 m-auto flex flex-col items-center">
     <h1 class="pt-6 text-2xl text-center">{{title}}</h1>
     {% if description != "" %}
         <div class="pt-4">{{description}}</div>
     {% endif %}
+    {% if poll_type == "single" %}
+        <div class="pt-6 text-sm">
+            Choose one option
+        </div>
+    {% else if poll_type == "multi" %}
+        <div class="pt-6 text-sm">
+            Choose all options that you approve
+        </div>
+    {% else if poll_type == "score" %}
+        <div class="pt-6 text-sm text-center">
+            Give each option a score between 1 and 5.
+        </div>
+        <div class="pt-1 text-sm text-center">
+            1 is "Strongly Disapprove" and 5 is "Strongly Approve".
+        </div>
+    {% endif %}
     <div class="pt-6 flex flex-col items-start">
         {% for option in options %}
-            <div class="flex">
-                {% if poll_type == "single" %}
+            {% if poll_type == "single" %}
+                <div class="flex w-full items-center">
                     <input
                         type="radio"
                         class="poll-submission"
@@ -23,7 +39,9 @@
                         >
                         {{option.name}}
                     </label>
-                {% else if poll_type == "multi" %}
+                </div>
+            {% else if poll_type == "multi" %}
+                <div class="flex w-full items-center">
                     <input
                         type="checkbox"
                         class="poll-submission"
@@ -37,29 +55,40 @@
                         >
                         {{option.name}}
                     </label>
-                {% else if poll_type == "score" %}
+                </div>
+            {% else if poll_type == "score" %}
+                <div class="flex w-full justify-between items-center">
                     <!-- TODO submit id too value="{{option.id}}" -->
-                    <input
-                        type="range"
-                        class="poll-submission"
-                        id="option-{{option.id}}"
-                        name="scores"
-                        min="1"
-                        max="5"
-                        value="1"
-                        >
                     <label
                         for="option-{{option.id}}"
-                        class="pl-4"
+                        class="mr-4"
                         >
                         {{option.name}}
                     </label>
-                {% endif %}
-            </div>
+                    <div>
+                        <div class="flex justify-between text-xs px-1">
+                            <span>1</span>
+                            <span>2</span>
+                            <span>3</span>
+                            <span>4</span>
+                            <span>5</span>
+                        </div>
+                        <input
+                            type="range"
+                            class="poll-submission"
+                            id="option-{{option.id}}"
+                            name="scores"
+                            min="1"
+                            max="5"
+                            value="1"
+                            >
+                    </div>
+                </div>
+            {% endif %}
         {% endfor %}
         {% if allow_participant_options %}
-            <div class="flex">
-                {% if poll_type == "single" %}
+            {% if poll_type == "single" %}
+                <div class="flex w-full items-center">
                     <input
                         type="radio"
                         class="poll-submission"
@@ -80,7 +109,9 @@
                             onchange="document.getElementById('option-custom').checked = true"
                             >
                     </label>
-                {% else if poll_type == "multi" %}
+                </div>
+            {% else if poll_type == "multi" %}
+                <div class="flex w-full items-center">
                     <input
                         type="checkbox"
                         class="poll-submission"
@@ -101,19 +132,12 @@
                             onchange="document.getElementById('option-custom').checked = true"
                             >
                     </label>
-                {% else if poll_type == "score" %}
-                    <input
-                        type="range"
-                        class="poll-submission"
-                        id="option-custom"
-                        name="scores"
-                        min="1"
-                        max="5"
-                        value="1"
-                        >
+                </div>
+            {% else if poll_type == "score" %}
+                <div class="flex w-full justify-between items-center">
                     <label
                         for="option-custom"
-                        class="pl-4"
+                        class="mr-4"
                         >
                         <input
                             type="text"
@@ -124,8 +148,26 @@
                             onchange="document.getElementById('option-custom').checked = true"
                             >
                     </label>
-                {% endif %}
-            </div>
+                    <div>
+                        <div class="flex justify-between text-xs px-1">
+                            <span>1</span>
+                            <span>2</span>
+                            <span>3</span>
+                            <span>4</span>
+                            <span>5</span>
+                        </div>
+                        <input
+                            type="range"
+                            class="poll-submission"
+                            id="option-custom"
+                            name="scores"
+                            min="1"
+                            max="5"
+                            value="1"
+                            >
+                    </div>
+                </div>
+            {% endif %}
         {% endif %}
     </div>
     {% if require_name %}
@@ -137,13 +179,22 @@
         </label>
         <input
             type="text"
+            required
             id="participant_name"
             name="participant_name"
             class="poll-submission"
             >
     {% endif %}
     <div class="pt-6">
-        <button class="button min-w-10">Submit</button>
+        <button
+            class="button min-w-10"
+            hx-post="/poll/{{id}}/submission"
+            hx-include=".poll-submission"
+            hx-target="body"
+            hx-push-url="/poll/{{id}}/results"
+            >
+            Submit
+        </button>
     </div>
 </div>
 {% endblock %}

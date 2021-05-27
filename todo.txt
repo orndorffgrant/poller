@@ -1,7 +1,7 @@
 render poll for taking
 allow poll-takers to add options, actual
 record selections (stop deleting all options on edit)
-go to results on submit, graph
+go to results on submit, graph, put something in local storage
 
 make published mean something
 
