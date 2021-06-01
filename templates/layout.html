@@ -49,15 +49,54 @@ htmx.defineExtension('json-enc', {
     }
   },
 
-  encodeParameters : function(xhr, parameters, elt) {
+  encodeParameters : function(xhr, params, elt) {
     xhr.overrideMimeType('text/json');
-    var newParams = Object.keys(parameters).map(function(k) {
-      if (parameters[k] == "__--true") {
-        parameters[k] = true;
+    const newParams = Object.keys(params).map(function(k) {
+      let valName = k;
+      let convert = v => v;
+      if (valName.includes(":")) {
+        const [typeString, newValName] = valName.split(":");
+        valName = newValName;
+        if (typeString === "number") {
+          convert = v => parseInt(v);
+        } else if (typeString === "bool") {
+          convert = v => v === "true";
+        } else {
+          console.warning("unrecognized typestring: ", typeString);
+        }
       }
-      return [k, parameters[k]];
+      if (Array.isArray(params[k])) {
+        return [valName, params[k].map(v => convert(v))];
+      } else {
+        return [valName, convert(params[k])]
+      }
     }).reduce(function(obj, [k,v]) {
-      obj[k] = v;
+      if (k.includes("[].")) {
+        let valArr = v;
+        if (!Array.isArray(v)) {
+          valArr = [v];
+        }
+        let [valName, objkey] = k.split("[].");
+        if (obj[valName] === undefined) {
+          // we're the first array to get processed
+          obj[valName] = valArr.map(val => ({[objkey]: val}))
+        } else {
+          // add our value to the existing array of objects
+          obj[valName] = obj[valName].map((valObj, index) => ({
+            ...valObj,
+            [objkey]: valArr[index],
+          }));
+        }
+      } else if (k.endsWith("[]")) {
+        let valName = k.substring(0, k.length - 2);
+        if (Array.isArray(v)) {
+          obj[valName] = v;
+        } else {
+          obj[valName] = [v];
+        }
+      } else {
+        obj[k] = v;
+      }
       return obj;
     }, {});
     return (JSON.stringify(newParams));

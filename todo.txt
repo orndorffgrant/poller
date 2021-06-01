@@ -1,11 +1,12 @@
-render poll for taking
-allow poll-takers to add options, actual
-record selections (stop deleting all options on edit)
+allow participant option submission
+validate forms
+record submission/selection
 go to results on submit, graph, put something in local storage
 
 make published mean something
 
 users, prompt to create user/password on first run when no users
+only update poll if on correct user
 
 combine all of version 0.1.0 into one migration script, name after version
 

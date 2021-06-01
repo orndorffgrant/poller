@@ -216,6 +216,15 @@ pub async fn edit_page(request: crate::Request) -> tide::Result {
     }
 }
 
+#[derive(FromRow)]
+struct IdRow {
+    id: i64,
+}
+#[derive(Deserialize)]
+struct SavePollBodyOption {
+    id: i64,
+    name: String,
+}
 #[derive(Deserialize)]
 struct SavePollBody {
     title: String,
@@ -223,7 +232,7 @@ struct SavePollBody {
     require_name: Option<bool>,
     allow_participant_options: Option<bool>,
     poll_type: String,
-    options: Vec<String>,
+    options: Vec<SavePollBodyOption>,
 }
 pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
     let body: SavePollBody = request.body_json().await?;
@@ -252,31 +261,67 @@ pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
     .execute(&request.state().db)
     .await?;
 
-    sqlx::query!(
+    let options_before = sqlx::query_as!(
+        IdRow,
         r#"
-        DELETE FROM options
+        SELECT id
+        FROM options
         WHERE poll_id = ?1
+        ORDER BY order_index
         "#,
-        id,
-    )
-    .execute(&request.state().db)
+        id
+    ).fetch_all(&request.state().db)
     .await?;
 
-    for (index, name) in body.options.iter().enumerate() {
-        let option_index: i64 = index.try_into()?;
-        sqlx::query!(
-            r#"
-            INSERT INTO options (name, order_index, poll_id)
-            VALUES (?1, ?2, ?3)
-            "#,
-            name,
-            option_index,
-            id,
-        )
-        .execute(&request.state().db)
-        .await?;
-    };
+    for opt in options_before {
+        match body.options.iter().find(|body_opt| body_opt.id == opt.id) {
+            None => {
+                sqlx::query!(
+                    r#"
+                    DELETE FROM options
+                    WHERE id = ?1 AND poll_id = ?2
+                    "#,
+                    opt.id,
+                    id,
+                )
+                .execute(&request.state().db)
+                .await?;
+            }
+            _ => {}
+        }
+    }
 
+    for (index, opt) in body.options.iter().enumerate() {
+        let option_index: i64 = index.try_into()?;
+        if opt.id < 0 {
+            sqlx::query!(
+                r#"
+                INSERT INTO options (name, order_index, poll_id)
+                VALUES (?1, ?2, ?3)
+                "#,
+                opt.name,
+                option_index,
+                id,
+            )
+            .execute(&request.state().db)
+            .await?;
+        } else {
+            sqlx::query!(
+                r#"
+                UPDATE options SET
+                name = ?1,
+                order_index = ?2
+                WHERE id = ?3 AND poll_id = ?4
+                "#,
+                opt.name,
+                option_index,
+                opt.id,
+                id,
+            )
+            .execute(&request.state().db)
+            .await?;
+        }
+    };
 
     let options = sqlx::query_as!(
         EditPageOptionQueryResult,

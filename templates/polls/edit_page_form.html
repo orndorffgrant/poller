@@ -32,8 +32,8 @@
       type="checkbox"
       class="poll-data"
       id="require_name"
-      name="require_name"
-      value="__--true"
+      name="bool:require_name"
+      value="true"
       {% if require_name %} checked {% endif %}
       >
   </div>
@@ -45,8 +45,8 @@
       type="checkbox"
       class="poll-data"
       id="allow_participant_options"
-      name="allow_participant_options"
-      value="__--true"
+      name="bool:allow_participant_options"
+      value="true"
       {% if allow_participant_options %} checked {% endif %}
       >
   </div>
@@ -114,11 +114,17 @@
       <div>
         <div class="flex justify-center pt-2" x-bind:id="option.name">
           <input
+            class="poll-data hidden"
+            type="text"
+            name="number:options[].id"
+            x-model="option.id"
+            >
+          <input
             autocomplete="off"
             class="poll-data min-w-0 w-80 max-w-full"
             style="border-top-right-radius:0px;border-bottom-right-radius:0px;"
             type="text"
-            name="options"
+            name="options[].name"
             x-bind:id='"option-" + option.id'
             x-model="option.name"
             >
@@ -149,7 +155,7 @@
     <div class="flex justify-center pt-2">
       <button
         class="button"
-        x-on:click="options.push({ name: '' })"
+        x-on:click="options.push({ name: '', id: -(options.length+1) })"
         >
         Add Option
       </button>
