@@ -62,7 +62,7 @@ htmx.defineExtension('json-enc', {
         } else if (typeString === "bool") {
           convert = v => v === "true";
         } else {
-          console.warning("unrecognized typestring: ", typeString);
+          console.warning("unrecognized typeString: ", typeString);
         }
       }
       if (Array.isArray(params[k])) {
@@ -76,7 +76,7 @@ htmx.defineExtension('json-enc', {
         if (!Array.isArray(v)) {
           valArr = [v];
         }
-        let [valName, objkey] = k.split("[].");
+        const [valName, objkey] = k.split("[].");
         if (obj[valName] === undefined) {
           // we're the first array to get processed
           obj[valName] = valArr.map(val => ({[objkey]: val}))
@@ -88,11 +88,22 @@ htmx.defineExtension('json-enc', {
           }));
         }
       } else if (k.endsWith("[]")) {
-        let valName = k.substring(0, k.length - 2);
+        const valName = k.substring(0, k.length - 2);
         if (Array.isArray(v)) {
           obj[valName] = v;
         } else {
           obj[valName] = [v];
+        }
+      } else if (k.includes(".")) {
+        const [valName, objkey] = k.split(".");
+        if (obj[valName] === undefined) {
+          obj[valName] = { [objkey]: v }
+        } else {
+          const existing = obj[valName];
+          obj[valName] = {
+            ...existing,
+            [objkey]: v,
+          }
         }
       } else {
         obj[k] = v;

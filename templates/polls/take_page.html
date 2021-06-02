@@ -100,7 +100,7 @@
                         class="poll-submission"
                         id="option-custom"
                         name="number:selection"
-                        value="custom"
+                        value="-1"
                         >
                     <label
                         for="option-custom"
@@ -109,6 +109,7 @@
                         <input
                             type="text"
                             id="new_option"
+                            class="poll-submission"
                             name="new_option"
                             placeholder="Add your own answer"
                             onclick="document.getElementById('option-custom').checked = true"
@@ -117,13 +118,22 @@
                     </label>
                 </div>
             {% else if poll_type == "multi" %}
-                <div class="flex w-full items-center">
+                <div class="flex w-full items-center" x-data="{ create: false }">
                     <input
                         type="checkbox"
                         class="poll-submission"
                         id="option-custom"
-                        name="number:selections[]"
-                        value="custom"
+                        name="bool:new_option.create"
+                        value="true"
+                        x-model="create"
+                        >
+                    <input
+                        type="checkbox"
+                        class="poll-submission hidden"
+                        id="option-custom"
+                        name="bool:new_option.create"
+                        value="false"
+                        x-model="!create"
                         >
                     <label
                         for="option-custom"
@@ -132,26 +142,44 @@
                         <input
                             type="text"
                             id="new_option"
-                            name="new_option"
+                            class="poll-submission"
+                            name="new_option.name"
                             placeholder="Add your own answer"
-                            onclick="document.getElementById('option-custom').checked = true"
-                            onchange="document.getElementById('option-custom').checked = true"
+                            x-on:click="create = true"
+                            x-on:change="create = true"
                             >
                     </label>
                 </div>
             {% else if poll_type == "score" %}
-                <div class="flex w-full justify-between items-center">
+                <div class="flex w-full justify-between items-center" x-data="{ create: false }">
                     <label
                         for="option-custom"
                         class="mr-4"
                         >
                         <input
+                            type="checkbox"
+                            class="poll-submission hidden"
+                            id="option-custom"
+                            name="bool:new_option.create"
+                            value="true"
+                            x-model="create"
+                            >
+                        <input
+                            type="checkbox"
+                            class="poll-submission hidden"
+                            id="option-custom"
+                            name="bool:new_option.create"
+                            value="false"
+                            x-model="!create"
+                            >
+                        <input
                             type="text"
+                            class="poll-submission"
                             id="new_option"
-                            name="new_option"
+                            name="new_option.name"
                             placeholder="Add your own answer"
-                            onclick="document.getElementById('option-custom').checked = true"
-                            onchange="document.getElementById('option-custom').checked = true"
+                            x-on:click="create = $event.target.value !== ''"
+                            x-on:change="create = $event.target.value !== ''"
                             >
                     </label>
                     <div>
@@ -166,7 +194,7 @@
                             type="range"
                             class="poll-submission"
                             id="option-custom"
-                            name="number:scores[]"
+                            name="number:new_option.score"
                             min="1"
                             max="5"
                             value="1"
