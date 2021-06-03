@@ -1,25 +1,29 @@
 {% extends "layout.html" %}
 
 {% block content %}
-{% include "edit_page_form.html" %}
-<div class="flex justify-center pt-8">
-  <button
-    class="button min-w-10"
-    hx-put="/poll/{{id}}"
-    hx-include=".poll-data"
-    hx-target="#form"
-    hx-swap="outerHTML"
-    hx-indicator="#save-indicator"
-    >
-    Save
-  </button>
-</div>
-<div
-  id="save-indicator"
-  class="htmx-indicator flex justify-center pt-2"
+<form
+  hx-put="/poll/{{id}}"
+  hx-include=".poll-data"
+  hx-target="#form"
+  hx-swap="outerHTML"
+  hx-indicator="#save-indicator"
   >
-  Saving...
-</div>
+  {% include "edit_page_form.html" %}
+  <div class="flex justify-center pt-8">
+    <button
+      type="submit"
+      class="button min-w-10"
+      >
+      Save
+    </button>
+  </div>
+  <div
+    id="save-indicator"
+    class="htmx-indicator flex justify-center pt-2"
+    >
+    Saving...
+  </div>
+</form>
 {% include "edit_page_publish.html" %}
 <script>
   function swap(arr, i1, i2) {

@@ -1,7 +1,13 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="max-w-sm px-4 pb-10 m-auto flex flex-col items-center">
+<form
+    class="max-w-sm px-4 pb-10 m-auto flex flex-col items-center"
+    hx-post="/poll/{{id}}/submission/{{poll_type}}"
+    hx-include=".poll-submission"
+    hx-target="body"
+    hx-push-url="/poll/{{id}}/results"
+    >
     <h1 class="pt-6 text-2xl text-center">{{title}}</h1>
     {% if description != "" %}
         <div class="pt-4">{{description}}</div>
@@ -222,14 +228,11 @@
     {% endif %}
     <div class="pt-6">
         <button
+            type="submit"
             class="button min-w-10"
-            hx-post="/poll/{{id}}/submission/{{poll_type}}"
-            hx-include=".poll-submission"
-            hx-target="body"
-            hx-push-url="/poll/{{id}}/results"
             >
             Submit
         </button>
     </div>
-</div>
+</form>
 {% endblock %}
