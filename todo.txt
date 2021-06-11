@@ -1,4 +1,8 @@
-record submission/selection
+single
+insert submission
+return graph
+multi
+score
 go to results on submit, graph, put something in local storage
 
 edit poll page: make inputs controlled by alpine, and do extra hidden checkbox true/false trick for booleans

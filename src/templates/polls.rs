@@ -49,3 +49,9 @@ pub struct TakePage {
     pub poll_type: String,
     pub options: Vec<EditPageOption>,
 }
+
+#[derive(Template)]
+#[template(path = "polls/results_page.html")]
+pub struct ResultsPage {
+    pub html_title: String,
+}

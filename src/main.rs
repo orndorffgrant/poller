@@ -84,6 +84,7 @@ async fn main() -> tide::Result<()> {
     poll.put(routes::polls::edit_page_save);
     poll.at("/edit").get(routes::polls::edit_page);
     poll.at("/toggle-publish").post(routes::polls::edit_page_toggle_publish);
+    poll.at("/submission/single").post(routes::polls::submit_single);
 
     app.listen("0.0.0.0:8000").await?;
     Ok(())

@@ -1,4 +1,4 @@
-use std::convert::TryInto;
+use std::{convert::TryInto};
 
 use anyhow::Result;
 use rand::{Rng, distributions::Alphanumeric};
@@ -381,4 +381,53 @@ pub async fn edit_page_toggle_publish(mut request: crate::Request) -> tide::Resu
         id: id.to_string(),
         published: p.published,
     }.into())
+}
+
+#[derive(Deserialize)]
+struct SingleSubmission {
+    selection: i64,
+    new_option: Option<String>,
+    participant_name: String,
+}
+#[derive(FromRow)]
+struct SubmitPollQueryResult {
+    require_name: bool,
+    allow_participant_options: bool,
+    poll_type: String,
+    published: bool,
+}
+pub async fn submit_single(mut request: crate::Request) -> tide::Result {
+    let body: SingleSubmission = request.body_json().await?;
+    let id = request.param("poll_id")?;
+
+    let poll = sqlx::query_as!(
+        SubmitPollQueryResult,
+        r#"
+        SELECT
+            require_name,
+            allow_participant_options,
+            poll_type,
+            published
+        FROM polls
+        WHERE id = ?1
+        "#,
+        id
+    )
+    .fetch_one(&request.state().db)
+    .await?;
+
+    if !poll.published {
+        Ok(tide::Response::builder(404).build())
+    } else if poll.poll_type != POLL_TYPE_SINGLE {
+        Ok(tide::Response::builder(400).build())
+    } else if poll.require_name && body.participant_name == "" {
+        Ok(tide::Response::builder(400).build())
+    } else if !poll.allow_participant_options && body.selection == -1 {
+        Ok(tide::Response::builder(400).build())
+    } else {
+        // TODO insert submission
+        Ok(ResultsPage{
+            html_title: "cool".to_string()
+        }.into())
+    }
 }
