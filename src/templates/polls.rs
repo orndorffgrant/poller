@@ -50,8 +50,18 @@ pub struct TakePage {
     pub options: Vec<EditPageOption>,
 }
 
+#[derive(Serialize)]
+pub struct OptionResult {
+    pub id: i64,
+    pub name: String,
+    pub score: i64,
+    pub order_index: i64,
+}
 #[derive(Template)]
 #[template(path = "polls/results_page.html")]
 pub struct ResultsPage {
     pub html_title: String,
+    pub title: String,
+    pub option_results: Vec<OptionResult>,
+    pub largest_score: i64,
 }

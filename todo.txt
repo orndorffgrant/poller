@@ -1,9 +1,10 @@
-single
-insert submission
-return graph
+rustfmt
+factor out results page and normal /results page so I can refresh
 multi
 score
 go to results on submit, graph, put something in local storage
+https://chartscss.org/customization/animations/#color-gradient-animation
+vendor chartscss
 
 edit poll page: make inputs controlled by alpine, and do extra hidden checkbox true/false trick for booleans
 make published mean something

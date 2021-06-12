@@ -1,5 +1,43 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<p>here are the results</p>
+<link rel="stylesheet" href="https://unpkg.com/charts.css/dist/charts.min.css">
+<style>
+#results-chart .charts-css {
+  --color-1: linear-gradient(to right, #1a2a6c, #b21f1f, #fdbb2d);
+  --color-2: linear-gradient(to right, #e96443, #904e95);
+  --color-3: linear-gradient(to right, #0b486b, #f56217);
+  --color-4: linear-gradient(to right, #ff5f6d, #ffc371);
+  --color-5: linear-gradient(to right, #c2e59c, #64b3f4);
+  --color-6: linear-gradient(to right, #fc00ff, #00dbde);
+  --color-7: linear-gradient(to right, #7b4397, #dc2430);
+  --color-8: linear-gradient(to right, #43cea2, #185a9d);
+  --color-9: linear-gradient(to right, #d38312, #a83279);
+  --color-10: linear-gradient(to right, #ff4e50, #f9d423);
+}
+</style>
+<h1 class="text-center m-auto">{{title}}</h1>
+<div id="results-chart" class="max-w-screen-sm m-auto h-96">
+    <table class="charts-css [ bar ] [ show-labels show-data-on-hover ] [ ]">
+        <thead>
+            <tr>
+                <th scope="col">Option</th>
+                <th scope="col">Vote Total</th>
+            </tr>
+        </thead>
+
+        <tbody><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/charts.css/dist/charts.min.css">
+            {% for result in option_results %}
+            <tr>
+                <th scope="row">{{result.name}}</th>
+                <td style="--size: calc( {{result.score}} / {{largest_score}} );">
+                    <span class="data">
+                        {{result.score}}
+                    </span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}

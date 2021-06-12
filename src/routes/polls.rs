@@ -1,3 +1,6 @@
+use std::cmp::max;
+use std::collections::HashMap;
+use std::hash::Hash;
 use std::{convert::TryInto};
 
 use anyhow::Result;
@@ -387,14 +390,21 @@ pub async fn edit_page_toggle_publish(mut request: crate::Request) -> tide::Resu
 struct SingleSubmission {
     selection: i64,
     new_option: Option<String>,
-    participant_name: String,
+    participant_name: Option<String>,
 }
 #[derive(FromRow)]
 struct SubmitPollQueryResult {
+    title: String,
     require_name: bool,
     allow_participant_options: bool,
     poll_type: String,
     published: bool,
+}
+struct SubmissionQueryResult {
+    score: i64,
+    option_id: i64,
+    option_name: String,
+    order_index: i64,
 }
 pub async fn submit_single(mut request: crate::Request) -> tide::Result {
     let body: SingleSubmission = request.body_json().await?;
@@ -404,6 +414,7 @@ pub async fn submit_single(mut request: crate::Request) -> tide::Result {
         SubmitPollQueryResult,
         r#"
         SELECT
+            title,
             require_name,
             allow_participant_options,
             poll_type,
@@ -420,14 +431,62 @@ pub async fn submit_single(mut request: crate::Request) -> tide::Result {
         Ok(tide::Response::builder(404).build())
     } else if poll.poll_type != POLL_TYPE_SINGLE {
         Ok(tide::Response::builder(400).build())
-    } else if poll.require_name && body.participant_name == "" {
+    } else if poll.require_name && (body.participant_name == None || body.participant_name == Some("".to_string())) {
         Ok(tide::Response::builder(400).build())
     } else if !poll.allow_participant_options && body.selection == -1 {
         Ok(tide::Response::builder(400).build())
+    } else if body.selection == -1 && (body.new_option == None || body.new_option == Some("".to_string())) {
+        Ok(tide::Response::builder(400).build())
     } else {
-        // TODO insert submission
+        // TODO handle new_option
+        sqlx::query!(
+            r#"
+            INSERT INTO submissions (
+                participant_name,
+                score,
+                option_id,
+                poll_id
+            )
+            VALUES (?1, ?2, ?3, ?4)
+            "#,
+            body.participant_name,
+            1,
+            body.selection,
+            id
+        )
+        .execute(&request.state().db)
+        .await?;
+        let submissions = sqlx::query_as!(
+            SubmissionQueryResult,
+            r#"
+            SELECT
+                COALESCE(s.score, 0) AS "score!",
+                o.id as option_id,
+                o.name AS option_name,
+                o.order_index
+            FROM options o
+                LEFT OUTER JOIN submissions s
+                ON s.option_id = o.id
+            WHERE o.poll_id = ?1
+            "#,
+            id
+        )
+
+        .fetch_all(&request.state().db)
+        .await?;
+        let option_result_map: HashMap<i64, OptionResult> = submissions.iter().fold(HashMap::new(), |mut results, submission| {
+            let mut result = results.entry(submission.option_id).or_insert_with(|| OptionResult{id: submission.option_id, name: submission.option_name.clone(), score: 0, order_index: submission.order_index});
+            result.score += submission.score;
+            results
+        });
+        let mut option_results: Vec<OptionResult> = option_result_map.into_iter().map(|r| r.1).collect();
+        option_results.sort_by_key(|r| r.order_index);
+        let largest_score = option_results.iter().fold(1, |largest, r| max(largest, r.score));
         Ok(ResultsPage{
-            html_title: "cool".to_string()
+            html_title: format!("Results | {}", poll.title),
+            title: poll.title,
+            option_results: option_results,
+            largest_score: largest_score,
         }.into())
     }
 }
