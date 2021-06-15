@@ -1,16 +1,16 @@
 use std::cmp::max;
 use std::collections::HashMap;
+use std::convert::TryInto;
 use std::hash::Hash;
-use std::{convert::TryInto};
 
 use anyhow::Result;
-use rand::{Rng, distributions::Alphanumeric};
-use tide::Redirect;
+use rand::{distributions::Alphanumeric, Rng};
 use serde::Deserialize;
 use sqlx::prelude::*;
+use tide::Redirect;
 
-use crate::templates::polls::*;
 use crate::templates::home::NotFoundTemplate;
+use crate::templates::polls::*;
 
 const POLL_TYPE_SINGLE: &str = "single";
 const POLL_TYPE_MULTI: &str = "multi";
@@ -34,7 +34,11 @@ impl PollType {
 }
 
 pub async fn new(request: crate::Request) -> tide::Result {
-    let new_id: String = rand::thread_rng().sample_iter(&Alphanumeric).take(10).map(char::from).collect();
+    let new_id: String = rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(10)
+        .map(char::from)
+        .collect();
     sqlx::query!(
         r#"
         INSERT INTO polls (
@@ -120,14 +124,15 @@ pub async fn take_page(request: crate::Request) -> tide::Result {
             ORDER BY order_index
             "#,
             id
-        ).fetch_all(&request.state().db)
+        )
+        .fetch_all(&request.state().db)
         .await?;
         let html_title = if p.title.is_empty() {
             "New Poll"
         } else {
             &p.title
         };
-        Ok(TakePage{
+        Ok(TakePage {
             html_title: html_title.to_string(),
             id: p.id,
             title: p.title,
@@ -135,11 +140,23 @@ pub async fn take_page(request: crate::Request) -> tide::Result {
             require_name: p.require_name,
             allow_participant_options: p.allow_participant_options,
             poll_type: p.poll_type,
-            options: options.iter().map(|o| { EditPageOption{ id: o.id, name: o.name.to_owned() }}).collect(),
-        }.into())
+            options: options
+                .iter()
+                .map(|o| EditPageOption {
+                    id: o.id,
+                    name: o.name.to_owned(),
+                })
+                .collect(),
+        }
+        .into())
     } else {
         Ok(tide::Response::builder(404)
-            .body(NotFoundTemplate{html_title: "Not Found".to_string()}.to_string())
+            .body(
+                NotFoundTemplate {
+                    html_title: "Not Found".to_string(),
+                }
+                .to_string(),
+            )
             .content_type(tide::http::mime::HTML)
             .build())
     }
@@ -193,14 +210,15 @@ pub async fn edit_page(request: crate::Request) -> tide::Result {
             ORDER BY order_index
             "#,
             id
-        ).fetch_all(&request.state().db)
+        )
+        .fetch_all(&request.state().db)
         .await?;
         let html_title = if p.title.is_empty() {
             "New Poll"
         } else {
             &p.title
         };
-        Ok(EditPage{
+        Ok(EditPage {
             html_title: html_title.to_string(),
             id: p.id,
             title: p.title,
@@ -209,11 +227,23 @@ pub async fn edit_page(request: crate::Request) -> tide::Result {
             allow_participant_options: p.allow_participant_options,
             poll_type: p.poll_type,
             published: p.published,
-            options: options.iter().map(|o| { EditPageOption{ id: o.id, name: o.name.to_owned() }}).collect(),
-        }.into())
+            options: options
+                .iter()
+                .map(|o| EditPageOption {
+                    id: o.id,
+                    name: o.name.to_owned(),
+                })
+                .collect(),
+        }
+        .into())
     } else {
         Ok(tide::Response::builder(404)
-            .body(NotFoundTemplate{html_title: "Not Found".to_string()}.to_string())
+            .body(
+                NotFoundTemplate {
+                    html_title: "Not Found".to_string(),
+                }
+                .to_string(),
+            )
             .content_type(tide::http::mime::HTML)
             .build())
     }
@@ -273,7 +303,8 @@ pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
         ORDER BY order_index
         "#,
         id
-    ).fetch_all(&request.state().db)
+    )
+    .fetch_all(&request.state().db)
     .await?;
 
     for opt in options_before {
@@ -324,7 +355,7 @@ pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
             .execute(&request.state().db)
             .await?;
         }
-    };
+    }
 
     let options = sqlx::query_as!(
         EditPageOptionQueryResult,
@@ -337,22 +368,30 @@ pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
         ORDER BY order_index
         "#,
         id
-    ).fetch_all(&request.state().db)
+    )
+    .fetch_all(&request.state().db)
     .await?;
 
-    Ok(EditPageForm{
+    Ok(EditPageForm {
         id: id.to_string(),
         title: body.title,
         description: body.description,
         require_name: require_name,
         allow_participant_options: allow_participant_options,
         poll_type: body.poll_type,
-        options: options.iter().map(|o| { EditPageOption{ id: o.id, name: o.name.to_owned() }}).collect(),
-    }.into())
+        options: options
+            .iter()
+            .map(|o| EditPageOption {
+                id: o.id,
+                name: o.name.to_owned(),
+            })
+            .collect(),
+    }
+    .into())
 }
 
 struct Published {
-    published: bool
+    published: bool,
 }
 pub async fn edit_page_toggle_publish(mut request: crate::Request) -> tide::Result {
     let id = request.param("poll_id")?;
@@ -380,10 +419,11 @@ pub async fn edit_page_toggle_publish(mut request: crate::Request) -> tide::Resu
     .fetch_one(&request.state().db)
     .await?;
 
-    Ok(EditPagePublish{
+    Ok(EditPagePublish {
         id: id.to_string(),
         published: p.published,
-    }.into())
+    }
+    .into())
 }
 
 #[derive(Deserialize)]
@@ -431,11 +471,15 @@ pub async fn submit_single(mut request: crate::Request) -> tide::Result {
         Ok(tide::Response::builder(404).build())
     } else if poll.poll_type != POLL_TYPE_SINGLE {
         Ok(tide::Response::builder(400).build())
-    } else if poll.require_name && (body.participant_name == None || body.participant_name == Some("".to_string())) {
+    } else if poll.require_name
+        && (body.participant_name == None || body.participant_name == Some("".to_string()))
+    {
         Ok(tide::Response::builder(400).build())
     } else if !poll.allow_participant_options && body.selection == -1 {
         Ok(tide::Response::builder(400).build())
-    } else if body.selection == -1 && (body.new_option == None || body.new_option == Some("".to_string())) {
+    } else if body.selection == -1
+        && (body.new_option == None || body.new_option == Some("".to_string()))
+    {
         Ok(tide::Response::builder(400).build())
     } else {
         // TODO handle new_option
@@ -471,22 +515,36 @@ pub async fn submit_single(mut request: crate::Request) -> tide::Result {
             "#,
             id
         )
-
         .fetch_all(&request.state().db)
         .await?;
-        let option_result_map: HashMap<i64, OptionResult> = submissions.iter().fold(HashMap::new(), |mut results, submission| {
-            let mut result = results.entry(submission.option_id).or_insert_with(|| OptionResult{id: submission.option_id, name: submission.option_name.clone(), score: 0, order_index: submission.order_index});
-            result.score += submission.score;
-            results
-        });
-        let mut option_results: Vec<OptionResult> = option_result_map.into_iter().map(|r| r.1).collect();
+        let option_result_map: HashMap<i64, OptionResult> =
+            submissions
+                .iter()
+                .fold(HashMap::new(), |mut results, submission| {
+                    let mut result =
+                        results
+                            .entry(submission.option_id)
+                            .or_insert_with(|| OptionResult {
+                                id: submission.option_id,
+                                name: submission.option_name.clone(),
+                                score: 0,
+                                order_index: submission.order_index,
+                            });
+                    result.score += submission.score;
+                    results
+                });
+        let mut option_results: Vec<OptionResult> =
+            option_result_map.into_iter().map(|r| r.1).collect();
         option_results.sort_by_key(|r| r.order_index);
-        let largest_score = option_results.iter().fold(1, |largest, r| max(largest, r.score));
-        Ok(ResultsPage{
+        let largest_score = option_results
+            .iter()
+            .fold(1, |largest, r| max(largest, r.score));
+        Ok(ResultsPage {
             html_title: format!("Results | {}", poll.title),
             title: poll.title,
             option_results: option_results,
             largest_score: largest_score,
-        }.into())
+        }
+        .into())
     }
 }

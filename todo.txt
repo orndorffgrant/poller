@@ -1,4 +1,3 @@
-rustfmt
 factor out results page and normal /results page so I can refresh
 multi
 score

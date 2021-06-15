@@ -30,30 +30,24 @@ pub type Request = tide::Request<State>;
 
 async fn assets_styles(_r: Request) -> tide::Result {
     let content = include_str!("../assets/styles.css");
-    Ok(
-        tide::Response::builder(200)
+    Ok(tide::Response::builder(200)
         .content_type(tide::http::mime::CSS)
         .body(content)
-        .build()
-    )
+        .build())
 }
 async fn assets_htmx(_r: Request) -> tide::Result {
     let content = include_str!("../assets/htmx.js");
-    Ok(
-        tide::Response::builder(200)
+    Ok(tide::Response::builder(200)
         .content_type(tide::http::mime::JAVASCRIPT)
         .body(content)
-        .build()
-    )
+        .build())
 }
 async fn assets_alpine(_r: Request) -> tide::Result {
     let content = include_str!("../assets/alpine.js");
-    Ok(
-        tide::Response::builder(200)
+    Ok(tide::Response::builder(200)
         .content_type(tide::http::mime::JAVASCRIPT)
         .body(content)
-        .build()
-    )
+        .build())
 }
 
 #[async_std::main]
@@ -61,15 +55,13 @@ async fn main() -> tide::Result<()> {
     tide::log::with_level(tide::log::LevelFilter::Info);
     let db = SqlitePool::connect("dev.db").await?;
 
-
-
     let mut app = tide::with_state(State { db: db.clone() });
 
     // app.with(build_session_middleware(db).await?);
 
-    app.at("/assets/styles.css").get( assets_styles);
-    app.at("/assets/htmx.js").get( assets_htmx);
-    app.at("/assets/alpine.js").get( assets_alpine);
+    app.at("/assets/styles.css").get(assets_styles);
+    app.at("/assets/htmx.js").get(assets_htmx);
+    app.at("/assets/alpine.js").get(assets_alpine);
 
     app.at("/").get(Redirect::new("/home"));
 
@@ -83,8 +75,10 @@ async fn main() -> tide::Result<()> {
     poll.get(routes::polls::take_page);
     poll.put(routes::polls::edit_page_save);
     poll.at("/edit").get(routes::polls::edit_page);
-    poll.at("/toggle-publish").post(routes::polls::edit_page_toggle_publish);
-    poll.at("/submission/single").post(routes::polls::submit_single);
+    poll.at("/toggle-publish")
+        .post(routes::polls::edit_page_toggle_publish);
+    poll.at("/submission/single")
+        .post(routes::polls::submit_single);
 
     app.listen("0.0.0.0:8000").await?;
     Ok(())
