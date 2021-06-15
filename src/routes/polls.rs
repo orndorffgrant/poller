@@ -7,6 +7,7 @@ use anyhow::Result;
 use rand::{distributions::Alphanumeric, Rng};
 use serde::Deserialize;
 use sqlx::prelude::*;
+use sqlx::SqlitePool;
 use tide::Redirect;
 
 use crate::templates::home::NotFoundTemplate;
@@ -113,42 +114,46 @@ pub async fn take_page(request: crate::Request) -> tide::Result {
     .await?;
 
     if let Some(p) = p_opt {
-        let options = sqlx::query_as!(
-            EditPageOptionQueryResult,
-            r#"
-            SELECT
-                id,
-                name
-            FROM options
-            WHERE poll_id = ?1
-            ORDER BY order_index
-            "#,
-            id
-        )
-        .fetch_all(&request.state().db)
-        .await?;
-        let html_title = if p.title.is_empty() {
-            "New Poll"
+        if !p.published {
+            Ok(tide::Response::builder(404).build())
         } else {
-            &p.title
-        };
-        Ok(TakePage {
-            html_title: html_title.to_string(),
-            id: p.id,
-            title: p.title,
-            description: p.description,
-            require_name: p.require_name,
-            allow_participant_options: p.allow_participant_options,
-            poll_type: p.poll_type,
-            options: options
-                .iter()
-                .map(|o| EditPageOption {
-                    id: o.id,
-                    name: o.name.to_owned(),
-                })
-                .collect(),
+            let options = sqlx::query_as!(
+                EditPageOptionQueryResult,
+                r#"
+                SELECT
+                    id,
+                    name
+                FROM options
+                WHERE poll_id = ?1
+                ORDER BY order_index
+                "#,
+                id
+            )
+            .fetch_all(&request.state().db)
+            .await?;
+            let html_title = if p.title.is_empty() {
+                "New Poll"
+            } else {
+                &p.title
+            };
+            Ok(TakePage {
+                html_title: html_title.to_string(),
+                id: p.id,
+                title: p.title,
+                description: p.description,
+                require_name: p.require_name,
+                allow_participant_options: p.allow_participant_options,
+                poll_type: p.poll_type,
+                options: options
+                    .iter()
+                    .map(|o| EditPageOption {
+                        id: o.id,
+                        name: o.name.to_owned(),
+                    })
+                    .collect(),
+            }
+            .into())
         }
-        .into())
     } else {
         Ok(tide::Response::builder(404)
             .body(
@@ -426,6 +431,62 @@ pub async fn edit_page_toggle_publish(mut request: crate::Request) -> tide::Resu
     .into())
 }
 
+struct ResultsPollDetails {
+    title: String,
+}
+async fn create_results_page(
+    poll_id: &str,
+    db: &SqlitePool,
+    poll: ResultsPollDetails,
+) -> tide::Result {
+    let submissions = sqlx::query_as!(
+        SubmissionQueryResult,
+        r#"
+        SELECT
+            COALESCE(s.score, 0) AS "score!",
+            o.id as option_id,
+            o.name AS option_name,
+            o.order_index
+        FROM options o
+            LEFT OUTER JOIN submissions s
+            ON s.option_id = o.id
+        WHERE o.poll_id = ?1
+        "#,
+        poll_id
+    )
+    .fetch_all(db)
+    .await?;
+    let option_result_map: HashMap<i64, OptionResult> =
+        submissions
+            .iter()
+            .fold(HashMap::new(), |mut results, submission| {
+                let mut result =
+                    results
+                        .entry(submission.option_id)
+                        .or_insert_with(|| OptionResult {
+                            id: submission.option_id,
+                            name: submission.option_name.clone(),
+                            score: 0,
+                            order_index: submission.order_index,
+                        });
+                result.score += submission.score;
+                results
+            });
+    let mut option_results: Vec<OptionResult> =
+        option_result_map.into_iter().map(|r| r.1).collect();
+    option_results.sort_by_key(|r| r.order_index);
+    let largest_score = option_results
+        .iter()
+        .fold(1, |largest, r| max(largest, r.score));
+    Ok(ResultsPage {
+        html_title: format!("Results | {}", poll.title),
+        title: poll.title,
+        option_results: option_results,
+        largest_score: largest_score,
+    }
+    .into())
+}
+
 #[derive(Deserialize)]
 struct SingleSubmission {
     selection: i64,
@@ -500,51 +561,44 @@ pub async fn submit_single(mut request: crate::Request) -> tide::Result {
         )
         .execute(&request.state().db)
         .await?;
-        let submissions = sqlx::query_as!(
-            SubmissionQueryResult,
-            r#"
-            SELECT
-                COALESCE(s.score, 0) AS "score!",
-                o.id as option_id,
-                o.name AS option_name,
-                o.order_index
-            FROM options o
-                LEFT OUTER JOIN submissions s
-                ON s.option_id = o.id
-            WHERE o.poll_id = ?1
-            "#,
-            id
+
+        create_results_page(
+            &id,
+            &request.state().db,
+            ResultsPollDetails { title: poll.title },
         )
-        .fetch_all(&request.state().db)
-        .await?;
-        let option_result_map: HashMap<i64, OptionResult> =
-            submissions
-                .iter()
-                .fold(HashMap::new(), |mut results, submission| {
-                    let mut result =
-                        results
-                            .entry(submission.option_id)
-                            .or_insert_with(|| OptionResult {
-                                id: submission.option_id,
-                                name: submission.option_name.clone(),
-                                score: 0,
-                                order_index: submission.order_index,
-                            });
-                    result.score += submission.score;
-                    results
-                });
-        let mut option_results: Vec<OptionResult> =
-            option_result_map.into_iter().map(|r| r.1).collect();
-        option_results.sort_by_key(|r| r.order_index);
-        let largest_score = option_results
-            .iter()
-            .fold(1, |largest, r| max(largest, r.score));
-        Ok(ResultsPage {
-            html_title: format!("Results | {}", poll.title),
-            title: poll.title,
-            option_results: option_results,
-            largest_score: largest_score,
-        }
-        .into())
+        .await
+    }
+}
+
+#[derive(FromRow)]
+struct ResultsPollQueryResult {
+    title: String,
+    published: bool,
+}
+pub async fn results_page(mut request: crate::Request) -> tide::Result {
+    let id = request.param("poll_id")?;
+    let poll = sqlx::query_as!(
+        ResultsPollQueryResult,
+        r#"
+        SELECT
+            title,
+            published
+        FROM polls
+        WHERE id = ?1
+        "#,
+        id
+    )
+    .fetch_one(&request.state().db)
+    .await?;
+    if !poll.published {
+        Ok(tide::Response::builder(404).build())
+    } else {
+        create_results_page(
+            &id,
+            &request.state().db,
+            ResultsPollDetails { title: poll.title },
+        )
+        .await
     }
 }

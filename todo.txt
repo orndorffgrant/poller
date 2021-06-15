@@ -1,12 +1,10 @@
-factor out results page and normal /results page so I can refresh
 multi
 score
-go to results on submit, graph, put something in local storage
-https://chartscss.org/customization/animations/#color-gradient-animation
+go to results on submit, put something in local storage or cookie
 vendor chartscss
+handle new_option or put that feature behind flag
 
 edit poll page: make inputs controlled by alpine, and do extra hidden checkbox true/false trick for booleans
-make published mean something
 
 users, prompt to create user/password on first run when no users
 only update poll if on correct user
