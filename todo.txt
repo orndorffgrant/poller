@@ -1,4 +1,3 @@
-score
 go to results on submit, put something in local storage or cookie
 vendor chartscss
 handle new_option or put that feature behind flag
