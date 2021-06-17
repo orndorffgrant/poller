@@ -434,6 +434,13 @@ pub async fn edit_page_toggle_publish(mut request: crate::Request) -> tide::Resu
 struct ResultsPollDetails {
     title: String,
 }
+#[derive(FromRow)]
+struct SubmissionQueryResult {
+    score: i64,
+    option_id: i64,
+    option_name: String,
+    order_index: i64,
+}
 async fn create_results_page(
     poll_id: &str,
     db: &SqlitePool,
@@ -487,12 +494,6 @@ async fn create_results_page(
     .into())
 }
 
-#[derive(Deserialize)]
-struct SingleSubmission {
-    selection: i64,
-    new_option: Option<String>,
-    participant_name: Option<String>,
-}
 #[derive(FromRow)]
 struct SubmitPollQueryResult {
     title: String,
@@ -501,16 +502,18 @@ struct SubmitPollQueryResult {
     poll_type: String,
     published: bool,
 }
-struct SubmissionQueryResult {
-    score: i64,
+struct OptionScore {
     option_id: i64,
-    option_name: String,
-    order_index: i64,
+    score: i64,
 }
-pub async fn submit_single(mut request: crate::Request) -> tide::Result {
-    let body: SingleSubmission = request.body_json().await?;
-    let id = request.param("poll_id")?;
-
+async fn submit(
+    poll_id: &str,
+    db: &SqlitePool,
+    poll_type: &str, // TODO replace poll_type string here with generic/typed function
+    participant_name: Option<String>,
+    new_option: Option<String>,
+    scores: Vec<OptionScore>,
+) -> tide::Result {
     let poll = sqlx::query_as!(
         SubmitPollQueryResult,
         r#"
@@ -523,52 +526,120 @@ pub async fn submit_single(mut request: crate::Request) -> tide::Result {
         FROM polls
         WHERE id = ?1
         "#,
-        id
+        poll_id
     )
-    .fetch_one(&request.state().db)
+    .fetch_one(db)
     .await?;
 
     if !poll.published {
         Ok(tide::Response::builder(404).build())
-    } else if poll.poll_type != POLL_TYPE_SINGLE {
+    } else if poll.poll_type != poll_type {
         Ok(tide::Response::builder(400).build())
     } else if poll.require_name
-        && (body.participant_name == None || body.participant_name == Some("".to_string()))
+        && (participant_name == None || participant_name == Some("".to_string()))
     {
         Ok(tide::Response::builder(400).build())
-    } else if !poll.allow_participant_options && body.selection == -1 {
-        Ok(tide::Response::builder(400).build())
-    } else if body.selection == -1
-        && (body.new_option == None || body.new_option == Some("".to_string()))
-    {
+    } else if !poll.allow_participant_options && new_option.is_some() {
         Ok(tide::Response::builder(400).build())
     } else {
         // TODO handle new_option
-        sqlx::query!(
-            r#"
-            INSERT INTO submissions (
+        for score in scores {
+            sqlx::query!(
+                r#"
+                INSERT INTO submissions (
+                    participant_name,
+                    score,
+                    option_id,
+                    poll_id
+                )
+                VALUES (?1, ?2, ?3, ?4)
+                "#,
                 participant_name,
-                score,
-                option_id,
+                score.score,
+                score.option_id,
                 poll_id
             )
-            VALUES (?1, ?2, ?3, ?4)
-            "#,
-            body.participant_name,
-            1,
-            body.selection,
-            id
-        )
-        .execute(&request.state().db)
-        .await?;
+            .execute(db)
+            .await?;
+        }
 
-        create_results_page(
-            &id,
+        create_results_page(poll_id, db, ResultsPollDetails { title: poll.title }).await
+    }
+}
+#[derive(Deserialize)]
+struct SingleSubmission {
+    selection: i64,
+    new_option: Option<String>,
+    participant_name: Option<String>,
+}
+pub async fn submit_single(mut request: crate::Request) -> tide::Result {
+    let body: SingleSubmission = request.body_json().await?;
+    let id = request.param("poll_id")?;
+
+    if body.selection == -1 && (body.new_option == None || body.new_option == Some("".to_string()))
+    {
+        Ok(tide::Response::builder(400).build())
+    } else {
+        submit(
+            id,
             &request.state().db,
-            ResultsPollDetails { title: poll.title },
+            POLL_TYPE_SINGLE,
+            body.participant_name,
+            body.new_option,
+            vec![OptionScore {
+                score: 1,
+                option_id: body.selection,
+            }],
         )
         .await
     }
+}
+
+#[derive(Deserialize)]
+struct NewOption {
+    name: String,
+    create: bool,
+}
+#[derive(Deserialize)]
+struct MultiSubmission {
+    selections: Vec<i64>,
+    new_option: Option<NewOption>,
+    participant_name: Option<String>,
+}
+pub async fn submit_multi(mut request: crate::Request) -> tide::Result {
+    let body: MultiSubmission = request.body_json().await?;
+    let id = request.param("poll_id")?;
+
+    let new_option_str = match body.new_option {
+        Some(new_option) => {
+            if new_option.create {
+                if new_option.name == "" {
+                    None
+                } else {
+                    Some(new_option.name)
+                }
+            } else {
+                None
+            }
+        }
+        None => None,
+    };
+
+    submit(
+        id,
+        &request.state().db,
+        POLL_TYPE_MULTI,
+        body.participant_name,
+        new_option_str,
+        body.selections
+            .iter()
+            .map(|s| OptionScore {
+                score: 1,
+                option_id: *s,
+            })
+            .collect(),
+    )
+    .await
 }
 
 #[derive(FromRow)]
