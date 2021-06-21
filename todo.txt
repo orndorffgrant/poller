@@ -1,6 +1,3 @@
-go to results on submit, put something in local storage or cookie
-vendor chartscss
-handle new_option or put that feature behind flag
 make charts prettier
 
 fix edit page submitting
@@ -8,12 +5,14 @@ edit poll page: make inputs controlled by alpine, and do extra hidden checkbox t
 
 users, prompt to create user/password on first run when no users
 only update poll if on correct user
-admin can see who voted for who (configurable to make public)
+poll-creator can see who voted for who (configurable to make public)
+poll-creator bypasses cookie gaurd
 
 combine all of version 0.1.0 into one migration script, name after version
 
 publish version 0.1.0
 
+finish allow_participant_options
 edit page: unsaved changes status and leave confirm
 
 some type of prebuild script to make sure tailwind build is correct?

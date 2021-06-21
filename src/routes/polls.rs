@@ -1,7 +1,6 @@
 use std::cmp::max;
 use std::collections::HashMap;
 use std::convert::TryInto;
-use std::hash::Hash;
 
 use anyhow::Result;
 use rand::{distributions::Alphanumeric, Rng};
@@ -81,6 +80,17 @@ pub async fn new(request: crate::Request) -> tide::Result {
     Ok(Redirect::temporary(uri).into())
 }
 
+fn redirect_to_results(poll_id: &str, htmx: bool) -> tide::Result {
+    let uri = format!("/poll/{}/results", poll_id);
+    if htmx {
+        Ok(tide::Response::builder(200)
+            .header("HX-Redirect", uri)
+            .build())
+    } else {
+        Ok(Redirect::temporary(uri).into())
+    }
+}
+
 #[derive(FromRow)]
 struct TakePagePollQueryResult {
     id: String,
@@ -95,9 +105,7 @@ struct TakePagePollQueryResult {
 pub async fn take_page(request: crate::Request) -> tide::Result {
     let id = request.param("poll_id")?;
     if request.cookie(id).is_some() {
-        Ok(tide::Response::builder(400)
-            .body("already submitted")
-            .build())
+        redirect_to_results(id, false)
     } else {
         let p_opt = sqlx::query_as!(
             TakePagePollQueryResult,
@@ -230,6 +238,7 @@ pub async fn edit_page(request: crate::Request) -> tide::Result {
             &p.title
         };
         Ok(EditPage {
+            features: request.state().features,
             html_title: html_title.to_string(),
             id: p.id,
             title: p.title,
@@ -384,6 +393,7 @@ pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
     .await?;
 
     Ok(EditPageForm {
+        features: request.state().features,
         id: id.to_string(),
         title: body.title,
         description: body.description,
@@ -576,7 +586,7 @@ async fn submit(
         Ok(tide::Response::builder(200)
             .header(
                 "Set-Cookie",
-                format!("{}=true; HttpOnly", poll_id),
+                format!("{}=true; HttpOnly; Path=/; Expires=Fri, 31 Dec 9999 12:00:00 GMT; SameSite=Lax", poll_id),
             )
             .body(
                 create_results_page(poll_id, db, ResultsPollDetails { title: poll.title })
@@ -597,9 +607,7 @@ pub async fn submit_single(mut request: crate::Request) -> tide::Result {
     let id = request.param("poll_id")?;
 
     if request.cookie(id).is_some() {
-        Ok(tide::Response::builder(400)
-            .body("already submitted")
-            .build())
+        redirect_to_results(id, true)
     } else {
         if body.selection == -1
             && (body.new_option == None || body.new_option == Some("".to_string()))
@@ -638,9 +646,7 @@ pub async fn submit_multi(mut request: crate::Request) -> tide::Result {
     let id = request.param("poll_id")?;
 
     if request.cookie(id).is_some() {
-        Ok(tide::Response::builder(400)
-            .body("already submitted")
-            .build())
+        redirect_to_results(id, true)
     } else {
         let new_option_str = match body.new_option {
             Some(new_option) => {
@@ -683,9 +689,7 @@ pub async fn submit_score(mut request: crate::Request) -> tide::Result {
     let id = request.param("poll_id")?;
 
     if request.cookie(id).is_some() {
-        Ok(tide::Response::builder(400)
-            .body("already submitted")
-            .build())
+        redirect_to_results(id, true)
     } else {
         let new_option_str = match body.new_option {
             Some(new_option) => {

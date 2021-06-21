@@ -1,13 +1,11 @@
 {
   "scripts": {
-    "vendor-htmx": "curl https://unpkg.com/htmx.org@1.3.3/dist/htmx.js -o ../assets/htmx.js",
-    "vendor-alpine": "curl https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.js -o ../assets/alpine.js",
-    "watch-develop": "npm run build-js && nodemon --watch . -e css node_modules/.bin/postcss src/styles.css -o ../assets/styles.css",
+    "vendor-assets": "deno run --allow-net --allow-write vendor-assets.js",
+    "watch-develop": "npm run vendor-assets && nodemon --watch . -e css node_modules/.bin/postcss src/styles.css -o ../assets/styles.css",
     "develop": "postcss src/styles.css -o ../assets/styles.css",
-    "watch-build": "npm run build-js && NODE_ENV=production nodemon --watch . --watch ../templates -e js,mjs,json,css,html node_modules/.bin/postcss src/styles.css -o ../assets/styles.css",
-    "build-js": "npm run vendor-htmx && npm run vendor-alpine",
+    "watch-build": "npm run vendor-assets && NODE_ENV=production nodemon --watch . --watch ../templates -e js,mjs,json,css,html node_modules/.bin/postcss src/styles.css -o ../assets/styles.css",
     "build-css": "NODE_ENV=production postcss src/styles.css -o ../assets/styles.css",
-    "build": "npm run build-js && npm run build-css"
+    "build": "npm run vendor-assets && npm run build-css"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^13.0.0",

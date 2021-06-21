@@ -38,21 +38,26 @@
       {% if require_name %} checked {% endif %}
       >
   </div>
-  <div class="flex justify-center pt-6">
-    <label for="allow_participant_options">Allow participants to add their own options?</label>
-  </div>
-  <div class="flex justify-center">
-    <input
-      type="checkbox"
-      class="poll-data"
-      id="allow_participant_options"
-      name="bool:allow_participant_options"
-      value="true"
-      {% if allow_participant_options %} checked {% endif %}
-      >
-  </div>
+  {% if features.allow_participant_options %}
+    <div class="flex justify-center pt-6">
+      <label for="allow_participant_options">Allow participants to add their own options?</label>
+    </div>
+    <div class="flex justify-center">
+      <input
+        type="checkbox"
+        class="poll-data"
+        id="allow_participant_options"
+        name="bool:allow_participant_options"
+        value="true"
+        {% if allow_participant_options %} checked {% endif %}
+        >
+    </div>
+  {% endif %}
   <div class="flex justify-center pt-6">
     What kind of poll is this?
+  </div>
+  <div class="flex justify-center pt-1 text-xs">
+    Don't change this after any answers have been submitted
   </div>
   <div class="max-w-sm m-auto pt-2">
     <div class="flex">

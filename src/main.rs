@@ -8,9 +8,15 @@ mod templates;
 mod routes;
 mod utils;
 
+#[derive(Clone, Copy)]
+pub struct Features {
+    allow_participant_options: bool,
+}
+
 #[derive(Clone)]
 pub struct State {
     db: SqlitePool,
+    features: Features,
 }
 
 pub type Request = tide::Request<State>;
@@ -30,6 +36,13 @@ pub type Request = tide::Request<State>;
 
 async fn assets_styles(_r: Request) -> tide::Result {
     let content = include_str!("../assets/styles.css");
+    Ok(tide::Response::builder(200)
+        .content_type(tide::http::mime::CSS)
+        .body(content)
+        .build())
+}
+async fn assets_charts(_r: Request) -> tide::Result {
+    let content = include_str!("../assets/charts.css");
     Ok(tide::Response::builder(200)
         .content_type(tide::http::mime::CSS)
         .body(content)
@@ -55,11 +68,18 @@ async fn main() -> tide::Result<()> {
     tide::log::with_level(tide::log::LevelFilter::Info);
     let db = SqlitePool::connect("dev.db").await?;
 
-    let mut app = tide::with_state(State { db: db.clone() });
+    let mut app = tide::with_state(State {
+        db: db.clone(),
+        features: Features {
+            allow_participant_options: env::var("POLLER_ALLOW_PARTICIPANT_OPTIONS")
+                == Ok("true".to_string()),
+        },
+    });
 
     // app.with(build_session_middleware(db).await?);
 
     app.at("/assets/styles.css").get(assets_styles);
+    app.at("/assets/charts.css").get(assets_charts);
     app.at("/assets/htmx.js").get(assets_htmx);
     app.at("/assets/alpine.js").get(assets_alpine);
 

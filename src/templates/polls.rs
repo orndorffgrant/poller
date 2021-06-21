@@ -18,6 +18,7 @@ pub struct EditPage {
     pub poll_type: String,
     pub published: bool,
     pub options: Vec<EditPageOption>,
+    pub features: crate::Features,
 }
 #[derive(Template)]
 #[template(path = "polls/edit_page_form.html")]
@@ -29,6 +30,7 @@ pub struct EditPageForm {
     pub allow_participant_options: bool,
     pub poll_type: String,
     pub options: Vec<EditPageOption>,
+    pub features: crate::Features,
 }
 #[derive(Template)]
 #[template(path = "polls/edit_page_publish.html")]
