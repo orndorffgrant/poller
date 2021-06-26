@@ -13,11 +13,83 @@
   --color-8: linear-gradient(to right, #43cea2, #185a9d);
   --color-9: linear-gradient(to right, #d38312, #a83279);
   --color-10: linear-gradient(to right, #ff4e50, #f9d423);
+  --labels-size: 0px;
+}
+/* #results-chart .charts-css.bar:not(.reverse) tbody tr {
+    background-color: #ffffff;
+    height: 2rem;
+}
+#results-chart .charts-css.bar:not(.reverse) tbody tr th {
+    width: auto;
+    z-index: 1000;
+    color: #ffffff;
+    mix-blend-mode: difference;
+    mix-blend-mode: luminosity;
+    min-width: calc(100%*var(--size, 1));
+    align-items: flex-start;
+    position: absolute;
+    overflow: hidden;
+}
+#results-chart .charts-css.bar:not(.reverse) tbody tr th .on-top {
+    width: auto;
+    z-index: 1000;
+    color: #ffffff;
+    mix-blend-mode: difference;
+    mix-blend-mode: luminosity;
+    min-width: calc(100%*var(--size, 1));
+    align-items: flex-start;
+
+    width: calc(100%*var(--size, 1));
+    position: absolute;
+    top: 0;
+    height: 2rem;
+    align-items: center;
+    display: flex;
+}
+#results-chart .charts-css.bar:not(.reverse) tbody tr th span {
+    padding-left: 0.5rem;
+}
+#results-chart .charts-css.bar:not(.reverse) tbody tr:nth-of-type(10n+1) th {
+  background: linear-gradient(to right, #e5d593, #4de0e0, #0244d2);
+  background: linear-gradient(to right, #1a2a6c, #b21f1f, #fdbb2d);
+  background-clip: text;
+  color: transparent;
+} */
+
+
+#results-chart .charts-css.bar:not(.reverse) tbody tr th {
+    justify-content: flex-start;
+    overflow: visible;
+    width: initial;
+    left: initial;
+    flex-direction: row;
+}
+#results-chart .charts-css.bar:not(.reverse) tbody tr th .underneath {
+    color: #000000;
+    padding-left: 0.5rem;
+    min-width: max-content;
+    display: flex;
+    align-items: center;
+    height: 2rem;
+}
+#results-chart .charts-css.bar:not(.reverse) tbody tr td {
+    justify-content: flex-start;
+    overflow: hidden;
+    font-weight: bold;
+    color: #ffffff;
+}
+#results-chart .charts-css.bar:not(.reverse) tbody tr td .on-top {
+    padding-left: 0.5rem;
+    min-width: max-content;
 }
 </style>
-<h1 class="text-center m-auto">{{title}}</h1>
-<div id="results-chart" class="max-w-screen-sm m-auto h-96">
-    <table class="charts-css [ bar ] [ show-labels show-data-on-hover ] [ ]">
+<h1 class="py-6 text-2xl text-center">{{title}}</h1>
+<div
+    id="results-chart"
+    class="max-w-screen-sm m-auto"
+    style="height: {{option_results.len() * 2}}rem"
+    >
+    <table class="charts-css [ bar ] [ show-labels ] [ ]">
         <thead>
             <tr>
                 <th scope="col">Option</th>
@@ -25,14 +97,24 @@
             </tr>
         </thead>
 
-        <tbody><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/charts.css/dist/charts.min.css">
+        <tbody>
             {% for result in option_results %}
-            <tr>
-                <th scope="row">{{result.name}}</th>
-                <td style="--size: calc( {{result.score}} / {{largest_score}} );">
+            <tr style="--size: calc( {{result.score}} / {{largest_score}} );">
+                <th scope="row">
+                    <span class="underneath">{{result.name}}</span>
+                    <span class="left-paren pl-2" aria-hidden="true">(</span>
+                    <span class="data" aria-hidden="true">
+                        {{result.score}}
+                    </span>
+                    <span class="right-paren" aria-hidden="true">)</span>
+                </th>
+                <td>
+                    <span class="on-top" aria-hidden="true">{{result.name}}</span>
+                    <span class="left-paren pl-2" aria-hidden="true">(</span>
                     <span class="data">
                         {{result.score}}
                     </span>
+                    <span class="right-paren" aria-hidden="true">)</span>
                 </td>
             </tr>
             {% endfor %}
