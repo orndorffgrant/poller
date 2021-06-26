@@ -10,10 +10,11 @@ edition = "2018"
 anyhow = "1.0.40"
 askama = { version = "0.10.5", features = ["with-tide", "serde-json"] }
 askama_tide = "0.13.0"
-async-sqlx-session = { version = "0.3", features = ["sqlite"] }
+async-session = { version = "3.0" }
 async-std = { version = "1.9.0", features = ["attributes"] }
 rand = "0.8"
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 serde_urlencoded = "0.7.0"
 sqlx = { version = "0.5", features = [ "runtime-async-std-rustls", "sqlite", "chrono" ] }
 tide = "0.16.0"

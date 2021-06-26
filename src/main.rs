@@ -1,12 +1,10 @@
-use async_sqlx_session::SqliteSessionStore;
 use sqlx::sqlite::SqlitePool;
 use std::{env, time::Duration};
-use tide::{sessions::SessionMiddleware, Redirect};
-
-mod templates;
+use tide::{http::cookies::SameSite, log, sessions::SessionMiddleware, Redirect};
 
 mod routes;
-mod utils;
+mod session;
+mod templates;
 
 #[derive(Clone, Copy)]
 pub struct Features {
@@ -20,19 +18,6 @@ pub struct State {
 }
 
 pub type Request = tide::Request<State>;
-
-// async fn build_session_middleware(
-//     db: SqlitePool,
-// ) -> tide::Result<SessionMiddleware<SqliteSessionStore>> {
-//     let session_store = SqliteSessionStore::from_client(db);
-//     session_store.migrate().await?;
-//     session_store.spawn_cleanup_task(Duration::from_secs(60 * 15));
-//     let session_secret = env::var("TIDE_SECRET").unwrap();
-//     Ok(SessionMiddleware::new(
-//         session_store,
-//         session_secret.as_bytes(),
-//     ))
-// }
 
 async fn assets_styles(_r: Request) -> tide::Result {
     let content = include_str!("../assets/styles.css");
@@ -76,7 +61,22 @@ async fn main() -> tide::Result<()> {
         },
     });
 
-    // app.with(build_session_middleware(db).await?);
+    let session_store = session::PollerSessionStore::from_client(db);
+    let cleanup_store = session_store.clone();
+    async_std::task::spawn(async move {
+        loop {
+            async_std::task::sleep(Duration::from_secs(60 * 60)).await;
+            if let Err(error) = cleanup_store.cleanup().await {
+                log::error!("cleanup error: {}", error);
+            }
+        }
+    });
+    app.with(
+        SessionMiddleware::new(session_store, env::var("POLLER_SECRET").unwrap().as_bytes())
+            .with_cookie_name("poller.session.id")
+            .with_same_site_policy(SameSite::Lax)
+            .with_session_ttl(Some(Duration::from_secs(60 * 60))),
+    );
 
     app.at("/assets/styles.css").get(assets_styles);
     app.at("/assets/charts.css").get(assets_charts);

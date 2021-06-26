@@ -16,22 +16,22 @@ const POLL_TYPE_SINGLE: &str = "single";
 const POLL_TYPE_MULTI: &str = "multi";
 const POLL_TYPE_SCORE: &str = "score";
 
-enum PollType {
-    Single,
-    Multi,
-    Score,
-}
+// enum PollType {
+//     Single,
+//     Multi,
+//     Score,
+// }
 
-impl PollType {
-    fn from_string(str: &str) -> Result<PollType> {
-        match str {
-            POLL_TYPE_SINGLE => Ok(PollType::Single),
-            POLL_TYPE_MULTI => Ok(PollType::Multi),
-            POLL_TYPE_SCORE => Ok(PollType::Score),
-            _ => Err(anyhow::Error::msg("invalid poll type")),
-        }
-    }
-}
+// impl PollType {
+//     fn from_string(str: &str) -> Result<PollType> {
+//         match str {
+//             POLL_TYPE_SINGLE => Ok(PollType::Single),
+//             POLL_TYPE_MULTI => Ok(PollType::Multi),
+//             POLL_TYPE_SCORE => Ok(PollType::Score),
+//             _ => Err(anyhow::Error::msg("invalid poll type")),
+//         }
+//     }
+// }
 
 pub async fn new(request: crate::Request) -> tide::Result {
     let new_id: String = rand::thread_rng()
@@ -414,7 +414,7 @@ pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
 struct Published {
     published: bool,
 }
-pub async fn edit_page_toggle_publish(mut request: crate::Request) -> tide::Result {
+pub async fn edit_page_toggle_publish(request: crate::Request) -> tide::Result {
     let id = request.param("poll_id")?;
 
     sqlx::query!(
@@ -723,7 +723,7 @@ struct ResultsPollQueryResult {
     title: String,
     published: bool,
 }
-pub async fn results_page(mut request: crate::Request) -> tide::Result {
+pub async fn results_page(request: crate::Request) -> tide::Result {
     let id = request.param("poll_id")?;
     let poll = sqlx::query_as!(
         ResultsPollQueryResult,

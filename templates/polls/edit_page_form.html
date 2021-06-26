@@ -135,6 +135,7 @@
             x-model="option.name"
             >
           <button
+            type="button"
             aria-label="Move Option Down One Spot"
             class="p-1 w-6 bg-black text-white border border-l-0 border-black hover:shadow-lg hover:bg-white hover:text-black active:bg-purple-500 active:text-white"
             x-on:click="index !== (options.length-1) && swap(options, index, index + 1)"
@@ -142,6 +143,7 @@
             ↓
           </button>
           <button
+            type="button"
             aria-label="Move Option Up One Spot"
             class="p-1 w-6 bg-black text-white border border-l-0 border-black hover:shadow-lg hover:bg-white hover:text-black active:bg-purple-500 active:text-white"
             x-on:click="index !== 0 && swap(options, index, index - 1)"
@@ -149,6 +151,7 @@
             ↑
           </button>
           <button
+            type="button"
             aria-label="Delete Option"
             class="p-1 w-6 bg-black text-white border border-l-0 border-black rounded-r hover:shadow-lg hover:bg-white hover:text-black active:bg-red-800 active:text-white"
             x-on:click="options.splice(index, 1)"
@@ -160,6 +163,7 @@
     </template>
     <div class="flex justify-center pt-2">
       <button
+        type="button"
         class="button"
         x-on:click="options.push({ name: '', id: -(options.length+1) })"
         >

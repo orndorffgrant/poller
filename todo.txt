@@ -1,7 +1,7 @@
-make charts prettier
-
 fix edit page submitting
 edit poll page: make inputs controlled by alpine, and do extra hidden checkbox true/false trick for booleans
+
+make charts prettier
 
 users, prompt to create user/password on first run when no users
 only update poll if on correct user
