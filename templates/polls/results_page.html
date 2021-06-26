@@ -3,60 +3,9 @@
 {% block content %}
 <style>
 #results-chart .charts-css {
-  --color-1: linear-gradient(to right, #1a2a6c, #b21f1f, #fdbb2d);
-  --color-2: linear-gradient(to right, #e96443, #904e95);
-  --color-3: linear-gradient(to right, #0b486b, #f56217);
-  --color-4: linear-gradient(to right, #ff5f6d, #ffc371);
-  --color-5: linear-gradient(to right, #c2e59c, #64b3f4);
-  --color-6: linear-gradient(to right, #fc00ff, #00dbde);
-  --color-7: linear-gradient(to right, #7b4397, #dc2430);
-  --color-8: linear-gradient(to right, #43cea2, #185a9d);
-  --color-9: linear-gradient(to right, #d38312, #a83279);
-  --color-10: linear-gradient(to right, #ff4e50, #f9d423);
+  --color: transparent;
   --labels-size: 0px;
 }
-/* #results-chart .charts-css.bar:not(.reverse) tbody tr {
-    background-color: #ffffff;
-    height: 2rem;
-}
-#results-chart .charts-css.bar:not(.reverse) tbody tr th {
-    width: auto;
-    z-index: 1000;
-    color: #ffffff;
-    mix-blend-mode: difference;
-    mix-blend-mode: luminosity;
-    min-width: calc(100%*var(--size, 1));
-    align-items: flex-start;
-    position: absolute;
-    overflow: hidden;
-}
-#results-chart .charts-css.bar:not(.reverse) tbody tr th .on-top {
-    width: auto;
-    z-index: 1000;
-    color: #ffffff;
-    mix-blend-mode: difference;
-    mix-blend-mode: luminosity;
-    min-width: calc(100%*var(--size, 1));
-    align-items: flex-start;
-
-    width: calc(100%*var(--size, 1));
-    position: absolute;
-    top: 0;
-    height: 2rem;
-    align-items: center;
-    display: flex;
-}
-#results-chart .charts-css.bar:not(.reverse) tbody tr th span {
-    padding-left: 0.5rem;
-}
-#results-chart .charts-css.bar:not(.reverse) tbody tr:nth-of-type(10n+1) th {
-  background: linear-gradient(to right, #e5d593, #4de0e0, #0244d2);
-  background: linear-gradient(to right, #1a2a6c, #b21f1f, #fdbb2d);
-  background-clip: text;
-  color: transparent;
-} */
-
-
 #results-chart .charts-css.bar:not(.reverse) tbody tr th {
     justify-content: flex-start;
     overflow: visible;
@@ -68,9 +17,6 @@
     color: #000000;
     padding-left: 0.5rem;
     min-width: max-content;
-    display: flex;
-    align-items: center;
-    height: 2rem;
 }
 #results-chart .charts-css.bar:not(.reverse) tbody tr td {
     justify-content: flex-start;
@@ -83,19 +29,40 @@
     min-width: max-content;
 }
 #results-chart .charts-css.bar:not(.reverse) tbody tr td .container {
-    min-width: max-content;
-    width: 100%;
+    min-width: var(--total-width);
     background: linear-gradient(to right, #e5d593, #4de0e0, #0244d2);
     background-clip: text;
     color: transparent;
     mix-blend-mode: luminosity;
+}
+#results-chart .charts-css.bar:not(.reverse) tbody {
+    background: linear-gradient(to right, #1a2a6c, #b21f1f, #fdbb2d);
+}
+#results-chart .charts-css.bar:not(.reverse) tbody tr th {
+    width: 100%;
+    height: 2rem;
+}
+#results-chart .charts-css.bar:not(.reverse) tbody tr th .white-bar {
+    background-color: white;
+    height: 2rem;
+    width: calc(100% - calc(100%*var(--size, 1)));
+    position: absolute;
+    right: 0;
+    overflow: hidden;
+}
+#results-chart .charts-css.bar:not(.reverse) tbody tr th .white-bar .underneath-container {
+    position: absolute;
+    left: calc(-1 * var(--total-width) * var(--size, 1));
+    display: flex;
+    align-items: center;
+    height: 2rem;
 }
 </style>
 <h1 class="py-6 text-2xl text-center">{{title}}</h1>
 <div
     id="results-chart"
     class="max-w-screen-sm m-auto"
-    style="height: {{option_results.len() * 2}}rem"
+    style="height: {{option_results.len() * 2}}rem; --total-width: 640px;"
     >
     <table class="charts-css [ bar ] [ show-labels ] [ ]">
         <thead>
@@ -109,21 +76,21 @@
             {% for result in option_results %}
             <tr style="--size: calc( {{result.score}} / {{largest_score}} );">
                 <th scope="row">
-                    <span class="underneath">{{result.name}}</span>
-                    <span class="left-paren pl-2" aria-hidden="true">(</span>
-                    <span class="data" aria-hidden="true">
-                        {{result.score}}
-                    </span>
-                    <span class="right-paren" aria-hidden="true">)</span>
+                    <div class="white-bar">
+                        <div class="underneath-container">
+                            <span class="underneath">{{result.name}}</span>
+                            <span class="left-paren pl-2" aria-hidden="true">(</span>
+                            <span class="data px-1" aria-hidden="true">
+                                {{result.score}}
+                            </span>
+                            <span class="right-paren" aria-hidden="true">)</span>
+                        </div>
+                    </div>
                 </th>
                 <td>
                     <span class="container">
                         <span class="on-top" aria-hidden="true">{{result.name}}</span>
-                        <span class="left-paren pl-2" aria-hidden="true">(</span>
-                        <span class="data">
-                            {{result.score}}
-                        </span>
-                        <span class="right-paren" aria-hidden="true">)</span>
+                        <span class="left-paren pl-2" aria-hidden="true">(</span><span class="data px-1">{{result.score}}</span><span class="right-paren" aria-hidden="true">)</span>
                     </span>
                 </td>
             </tr>
@@ -131,4 +98,16 @@
         </tbody>
     </table>
 </div>
+<script>
+const resizeObserver = new ResizeObserver(entries => {
+  for (let entry of entries) {
+    if(entry.contentBoxSize) {
+      entry.target.style.setProperty("--total-width", entry.contentBoxSize.inlineSize + 'px')
+    } else {
+      entry.target.style.setProperty("--total-width", entry.contentRect.width + 'px')
+    }
+  }
+});
+resizeObserver.observe(document.querySelector('#results-chart'));
+</script>
 {% endblock %}

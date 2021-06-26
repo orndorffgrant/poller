@@ -1,5 +1,3 @@
-make charts prettier
-
 users, prompt to create user/password on first run when no users
 only update poll if on correct user
 poll-creator can see who voted for who (configurable to make public)
