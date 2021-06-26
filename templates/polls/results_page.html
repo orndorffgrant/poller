@@ -82,6 +82,14 @@
     padding-left: 0.5rem;
     min-width: max-content;
 }
+#results-chart .charts-css.bar:not(.reverse) tbody tr td .container {
+    min-width: max-content;
+    width: 100%;
+    background: linear-gradient(to right, #e5d593, #4de0e0, #0244d2);
+    background-clip: text;
+    color: transparent;
+    mix-blend-mode: luminosity;
+}
 </style>
 <h1 class="py-6 text-2xl text-center">{{title}}</h1>
 <div
@@ -109,12 +117,14 @@
                     <span class="right-paren" aria-hidden="true">)</span>
                 </th>
                 <td>
-                    <span class="on-top" aria-hidden="true">{{result.name}}</span>
-                    <span class="left-paren pl-2" aria-hidden="true">(</span>
-                    <span class="data">
-                        {{result.score}}
+                    <span class="container">
+                        <span class="on-top" aria-hidden="true">{{result.name}}</span>
+                        <span class="left-paren pl-2" aria-hidden="true">(</span>
+                        <span class="data">
+                            {{result.score}}
+                        </span>
+                        <span class="right-paren" aria-hidden="true">)</span>
                     </span>
-                    <span class="right-paren" aria-hidden="true">)</span>
                 </td>
             </tr>
             {% endfor %}
