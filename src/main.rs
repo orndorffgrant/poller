@@ -87,6 +87,8 @@ async fn main() -> tide::Result<()> {
 
     app.at("/home").get(routes::home::home);
 
+    app.at("/login").get(routes::users::login_page);
+
     let mut polls = app.at("/poll");
 
     polls.at("/new").get(routes::polls::new);

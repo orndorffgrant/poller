@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-textarea, input[type="text"] {
+textarea, input[type="text"], input[type="password"] {
     @apply p-1 border border-black rounded focus:shadow-lg;
 }
 .button {

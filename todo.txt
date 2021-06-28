@@ -3,7 +3,7 @@ only update poll if on correct user
 poll-creator can see who voted for who (configurable to make public)
 poll-creator bypasses cookie gaurd
 
-combine all of version 0.1.0 into one migration script, name after version
+basic home page: "this is a free and open source basic polling application, intended for self hosting, or small shared instances"
 
 publish version 0.1.0
 

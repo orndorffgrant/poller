@@ -1,4 +1,5 @@
 pub mod polls;
+pub mod users;
 
 pub mod home {
     use askama::Template;
