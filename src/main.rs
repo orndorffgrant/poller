@@ -1,3 +1,5 @@
+use sqlx::migrate;
+use sqlx::prelude::*;
 use sqlx::sqlite::SqlitePool;
 use std::{env, time::Duration};
 use tide::{http::cookies::SameSite, log, sessions::SessionMiddleware, Redirect};
@@ -48,10 +50,49 @@ async fn assets_alpine(_r: Request) -> tide::Result {
         .build())
 }
 
+#[derive(FromRow)]
+struct AdminUserQueryResult {
+    id: i64,
+}
+
 #[async_std::main]
 async fn main() -> tide::Result<()> {
     tide::log::with_level(tide::log::LevelFilter::Info);
     let db = SqlitePool::connect("dev.db").await?;
+    migrate!().run(&db).await?;
+
+    // create admin if doesn't exist
+    let admin_opt = sqlx::query_as!(
+        AdminUserQueryResult,
+        r#"
+        SELECT id FROM users WHERE role = "admin"
+        "#
+    ).fetch_optional(&db).await?;
+
+    match admin_opt {
+        Some(_) => {
+            log::info!("admin user exists")
+        },
+        None => {
+            let password = "todo";
+            let salt = "todo";
+            let password_hash = "todo";
+            sqlx::query!(
+                r#"
+                INSERT INTO users (
+                    name,
+                    pass,
+                    salt,
+                    role
+                )
+                VALUES ("admin", ?1, ?2, "admin")
+                "#,
+                password_hash,
+                salt
+            ).execute(&db).await?;
+            log::info!("admin user created\nusername: admin\npassword: {}", password)
+        }
+    };
 
     let mut app = tide::with_state(State {
         db: db.clone(),

@@ -17,3 +17,10 @@ pub async fn login_page(request: crate::Request) -> tide::Result {
     }
     .into())
 }
+
+pub async fn login(request: crate::Request) -> tide::Result {
+    Ok(LoginPage {
+        html_title: "Log in".to_string(),
+    }
+    .into())
+}
