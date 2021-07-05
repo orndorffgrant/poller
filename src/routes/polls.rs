@@ -750,3 +750,10 @@ pub async fn results_page(request: crate::Request) -> tide::Result {
         .into())
     }
 }
+
+pub async fn poll_list_page(request: crate::Request) -> tide::Result {
+    Ok(PollListPage {
+        html_title: "Poll List".to_string(),
+    }
+    .into())
+}

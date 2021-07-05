@@ -1,3 +1,6 @@
+use rand::{distributions::Alphanumeric, Rng};
+use rand::prelude::*;
+use rand::rngs::StdRng;
 use sqlx::migrate;
 use sqlx::prelude::*;
 use sqlx::sqlite::SqlitePool;
@@ -58,7 +61,7 @@ struct AdminUserQueryResult {
 #[async_std::main]
 async fn main() -> tide::Result<()> {
     tide::log::with_level(tide::log::LevelFilter::Info);
-    let db = SqlitePool::connect("dev.db").await?;
+    let db = SqlitePool::connect("demo.db").await?;
     migrate!().run(&db).await?;
 
     // create admin if doesn't exist
@@ -74,22 +77,13 @@ async fn main() -> tide::Result<()> {
             log::info!("admin user exists")
         },
         None => {
-            let password = "todo";
-            let salt = "todo";
-            let password_hash = "todo";
-            sqlx::query!(
-                r#"
-                INSERT INTO users (
-                    name,
-                    pass,
-                    salt,
-                    role
-                )
-                VALUES ("admin", ?1, ?2, "admin")
-                "#,
-                password_hash,
-                salt
-            ).execute(&db).await?;
+            let rng = StdRng::from_entropy();
+            let password: String = rng
+                .sample_iter(&Alphanumeric)
+                .take(14)
+                .map(char::from)
+                .collect();
+            routes::users::create_user(&db, "admin", &password, "admin").await?;
             log::info!("admin user created\nusername: admin\npassword: {}", password)
         }
     };
@@ -124,14 +118,17 @@ async fn main() -> tide::Result<()> {
     app.at("/assets/htmx.js").get(assets_htmx);
     app.at("/assets/alpine.js").get(assets_alpine);
 
-    app.at("/").get(Redirect::new("/home"));
+    app.at("/").get(routes::home::root);
+    app.at("/hello").get(routes::home::hello);
 
-    app.at("/home").get(routes::home::home);
+    let mut login = app.at("/login");
+    login.get(routes::users::login_page);
+    login.post(routes::users::login);
+    app.at("/logout").get(routes::users::logout);
+    app.at("/admin").get(routes::users::user_list_page);
 
-    app.at("/login").get(routes::users::login_page);
-
+    app.at("/polls").get(routes::polls::poll_list_page);
     let mut polls = app.at("/poll");
-
     polls.at("/new").get(routes::polls::new);
 
     let mut poll = polls.at("/:poll_id");

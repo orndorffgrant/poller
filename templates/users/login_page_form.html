@@ -1,0 +1,50 @@
+<form
+    hx-post="/login"
+    >
+    <div class="flex flex-col items-center">
+        <div class="pt-6">
+            <label
+                for="name"
+                >
+                Username
+            </label>
+        </div>
+        <input
+            hx-preserve="true"
+            type="text"
+            required="required"
+            minlength="1"
+            id="name"
+            name="name"
+            >
+        <div class="pt-6">
+            <label
+                for="pass"
+                >
+                Password
+            </label>
+        </div>
+        <input
+            hx-preserve="true"
+            type="password"
+            required="required"
+            minlength="1"
+            id="pass"
+            name="pass"
+            >
+        <div class="pt-6">
+            <button
+                type="submit"
+                class="button min-w-10"
+                onclick="document.getElementById('invalid').remove()"
+                >
+                Log in
+            </button>
+        </div>
+        {% if wrong %}
+            <div id="invalid" class="pt-6">
+                Invalid login. Try again.
+            </div>
+        {% endif %}
+    </div>
+</form>

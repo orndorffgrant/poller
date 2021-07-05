@@ -67,3 +67,9 @@ pub struct ResultsPage {
     pub option_results: Vec<OptionResult>,
     pub largest_score: i64,
 }
+
+#[derive(Template)]
+#[template(path = "polls/poll_list_page.html")]
+pub struct PollListPage {
+    pub html_title: String,
+}
