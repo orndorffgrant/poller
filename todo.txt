@@ -1,16 +1,26 @@
-randomly generate admin pass/salt and hash
-login post endpoint, return home on success
-users, prompt to create user/password on first run when no users
-only update poll if on correct user
+admin user list
+admin user add
+admin user delete
+admin user set password
+creator poll list with links
+creator poll list "new" link
+only edit poll if on correct creator
 poll-creator can see who voted for who (configurable to make public)
 poll-creator bypasses cookie gaurd
 
+"poller run data.db" (allows for other subcommands in future)
+create database file if doesn't exist
+accept database file path as argument
+
 basic home page: "this is a free and open source basic polling application, intended for self hosting, or small shared instances"
+clean up all warnings
+github action to build/release
+readme
 
 publish version 0.1.0
 
 finish allow_participant_options
-edit poll page: make inputs controlled by alpine, and do extra hidden checkbox true/false trick for booleans
+edit page: make inputs controlled by alpine, and do extra hidden checkbox true/false trick for booleans
 edit page: unsaved changes status and leave confirm
 
 some type of prebuild script to make sure tailwind build is correct?

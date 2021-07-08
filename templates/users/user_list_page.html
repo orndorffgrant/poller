@@ -3,6 +3,20 @@
 {% block content %}
 <div>
     <a href="/logout">logout</a>
-    user list
+    {% for user in users }
+    <div>
+        <div>{{user.name}}</div>
+        <button>Delete</button> <!-- use htmx confirm -->
+        <button>Change Password</button> <!-- use htmx prompt for pass -->
+    </div>
+    {% endfor %}
+    <form>
+        <div>New User</div>
+        <div>Username</div>
+        <input type="text">
+        <div>Password</div>
+        <input type="text">
+        <button type="submit">Create new user</button>
+    </form>
 </div>
 {% endblock %}
