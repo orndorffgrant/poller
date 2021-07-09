@@ -126,6 +126,7 @@ async fn main() -> tide::Result<()> {
     login.post(routes::users::login);
     app.at("/logout").get(routes::users::logout);
     app.at("/admin").get(routes::users::user_list_page);
+    app.at("/user").post(routes::users::new_user);
 
     app.at("/polls").get(routes::polls::poll_list_page);
     let mut polls = app.at("/poll");

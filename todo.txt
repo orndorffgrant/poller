@@ -4,6 +4,7 @@ admin user delete
 admin user set password
 creator poll list with links
 creator poll list "new" link
+admin or creator user: user settings page, change password
 only edit poll if on correct creator
 poll-creator can see who voted for who (configurable to make public)
 poll-creator bypasses cookie gaurd

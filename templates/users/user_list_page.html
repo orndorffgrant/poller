@@ -3,19 +3,39 @@
 {% block content %}
 <div>
     <a href="/logout">logout</a>
-    {% for user in users }
-    <div>
-        <div>{{user.name}}</div>
-        <button>Delete</button> <!-- use htmx confirm -->
-        <button>Change Password</button> <!-- use htmx prompt for pass -->
+    <div id="user-list">
+        {% for user in users %}
+        <div id="user-{{user.id}}">
+            <div>{{user.name}}</div>
+            <button
+                hx-delete="/user/{{user.id}}"
+                hx-confirm='Are you sure you want to delete user "{{user.name}}"?'
+                hx-target="#user-{{user.id}}"
+                hx-swap="outerHTML"
+                >
+                Delete
+            </button>
+            <button
+                hx-put="/user/{{user.id}}/password"
+                hx-prompt="Create a new password for the user. Don't forget to tell them to change it once they log in."
+                hx-target="#user-{{user.id}}"
+                hx-swap="outerHTML"
+            >
+                Change Password
+            </button>
+        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-    <form>
+    <form
+        hx-post="/user"
+        hx-target="#user-list"
+        hx-swap="outerHTML"
+    >
         <div>New User</div>
-        <div>Username</div>
-        <input type="text">
-        <div>Password</div>
-        <input type="text">
+        <label for="name">Username</label>
+        <input type="text" id="name" name="name">
+        <label for="pass">Password</label>
+        <input type="text" id="pass" name="pass">
         <button type="submit">Create new user</button>
     </form>
 </div>

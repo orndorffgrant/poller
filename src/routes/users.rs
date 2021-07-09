@@ -13,6 +13,7 @@ use serde::Deserialize;
 use sha2::{Sha512, Digest};
 use sqlx::prelude::*;
 use sqlx::SqlitePool;
+use tide::Middleware;
 use tide::Redirect;
 
 use crate::templates::users::*;
@@ -135,8 +136,58 @@ pub async fn logout(mut request: crate::Request) -> tide::Result {
 }
 
 pub async fn user_list_page(request: crate::Request) -> tide::Result {
+    let session = request.session();
+    let role: Option<String> = session.get("role");
+    if role != Some("admin".to_string()) {
+        return Ok(Redirect::temporary("/").into())
+    }
+    let users = sqlx::query_as!(
+        User,
+        r#"
+        SELECT
+            id,
+            name
+        FROM users
+        WHERE name != "admin"
+        "#,
+    )
+    .fetch_all(&request.state().db)
+    .await?;
     Ok(UserListPage {
         html_title: "User List".to_string(),
+        users: users,
+    }
+    .into())
+}
+
+#[derive(Deserialize)]
+struct NewUserBody {
+    name: String,
+    pass: String,
+}
+pub async fn new_user(mut request: crate::Request) -> tide::Result {
+    let body: NewUserBody = request.body_json().await?;
+    let session = request.session();
+    let role: Option<String> = session.get("role");
+    if role != Some("admin".to_string()) {
+        return Ok(Redirect::temporary("/").into())
+    }
+    create_user(&request.state().db, &body.name, &body.pass, "creator").await?;
+    let users = sqlx::query_as!(
+        User,
+        r#"
+        SELECT
+            id,
+            name
+        FROM users
+        WHERE name != "admin"
+        "#,
+    )
+    .fetch_all(&request.state().db)
+    .await?;
+    Ok(UserListPage {
+        html_title: "User List".to_string(),
+        users: users,
     }
     .into())
 }
