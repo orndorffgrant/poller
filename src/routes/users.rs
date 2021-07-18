@@ -185,8 +185,7 @@ pub async fn new_user(mut request: crate::Request) -> tide::Result {
     )
     .fetch_all(&request.state().db)
     .await?;
-    Ok(UserListPage {
-        html_title: "User List".to_string(),
+    Ok(UserList {
         users: users,
     }
     .into())

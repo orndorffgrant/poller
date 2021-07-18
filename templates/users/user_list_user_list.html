@@ -1,0 +1,25 @@
+<div id="user-list" class="flex flex-col items-center">
+    {% for user in users %}
+    <div id="user-{{user.id}}" class="border-2 border-solid border-black p-2 m-2">
+        <div class="pb-2">{{user.name}}</div>
+        <button
+            class="button"
+            hx-delete="/user/{{user.id}}"
+            hx-confirm='Are you sure you want to delete user "{{user.name}}"?'
+            hx-target="#user-list"
+            hx-swap="outerHTML"
+            >
+            Delete
+        </button>
+        <button
+            class="button"
+            hx-put="/user/{{user.id}}/password"
+            hx-prompt="Create a new password for the user. Don't forget to tell them to change it once they log in."
+            hx-target="#user-list"
+            hx-swap="outerHTML"
+        >
+            Change Password
+        </button>
+    </div>
+    {% endfor %}
+</div>

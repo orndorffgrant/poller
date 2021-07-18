@@ -24,3 +24,8 @@ pub struct UserListPage {
     pub html_title: String,
     pub users: Vec<User>,
 }
+#[derive(Template)]
+#[template(path = "users/user_list_user_list.html")]
+pub struct UserList {
+    pub users: Vec<User>,
+}
