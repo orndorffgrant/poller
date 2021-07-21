@@ -1,6 +1,6 @@
 const assets = [
     {
-        url: "https://unpkg.com/htmx.org@1.3.3/dist/htmx.js",
+        url: "https://unpkg.com/htmx.org@1.5.0/dist/htmx.js",
         fileName: "htmx.js",
     },
     {

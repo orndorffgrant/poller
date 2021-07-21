@@ -25,13 +25,18 @@ fn hash_pass(password: &str, salt: &str) -> String {
     hex::encode(sha.finalize())
 }
 
-pub(crate) async fn create_user(db: &SqlitePool, username: &str, password: &str, role: &str) -> anyhow::Result<()> {
+fn gen_salt() -> String {
     let rng = StdRng::from_entropy();
     let salt: String = rng
         .sample_iter(&Alphanumeric)
         .take(32)
         .map(char::from)
         .collect();
+    salt
+}
+
+pub(crate) async fn create_user(db: &SqlitePool, username: &str, password: &str, role: &str) -> anyhow::Result<()> {
+    let salt = gen_salt();
     let password_hash = hash_pass(password, &salt);
     sqlx::query!(
         r#"
@@ -160,6 +165,25 @@ pub async fn user_list_page(request: crate::Request) -> tide::Result {
     .into())
 }
 
+async fn user_list(db: &SqlitePool) -> tide::Result {
+    let users = sqlx::query_as!(
+        User,
+        r#"
+        SELECT
+            id,
+            name
+        FROM users
+        WHERE name != "admin"
+        "#,
+    )
+    .fetch_all(db)
+    .await?;
+    Ok(UserList {
+        users: users,
+    }
+    .into())
+}
+
 #[derive(Deserialize)]
 struct NewUserBody {
     name: String,
@@ -173,20 +197,58 @@ pub async fn new_user(mut request: crate::Request) -> tide::Result {
         return Ok(Redirect::temporary("/").into())
     }
     create_user(&request.state().db, &body.name, &body.pass, "creator").await?;
-    let users = sqlx::query_as!(
-        User,
-        r#"
-        SELECT
-            id,
-            name
-        FROM users
-        WHERE name != "admin"
-        "#,
-    )
-    .fetch_all(&request.state().db)
-    .await?;
-    Ok(UserList {
-        users: users,
+    user_list(&request.state().db).await
+}
+
+pub async fn delete_user(mut request: crate::Request) -> tide::Result {
+    let user_id = request.param("user_id")?;
+    let session = request.session();
+    let role: Option<String> = session.get("role");
+    if role != Some("admin".to_string()) {
+        return Ok(Redirect::temporary("/").into())
     }
-    .into())
+    sqlx::query!(
+        r#"
+        DELETE FROM users
+        WHERE id = ?1
+        "#,
+        user_id,
+    )
+    .execute(&request.state().db)
+    .await?;
+    user_list(&request.state().db).await
+}
+
+pub async fn change_user_password(mut request: crate::Request) -> tide::Result {
+    let user_id = request.param("user_id")?;
+    let new_password = request.header("HX-Prompt");
+    let session = request.session();
+    let role: Option<String> = session.get("role");
+    if role != Some("admin".to_string()) {
+        return Ok(Redirect::temporary("/").into())
+    }
+    if new_password.is_none() {
+        return Ok(tide::Response::builder(400).build())
+    }
+    let new_password = new_password.unwrap();
+
+    let salt = gen_salt();
+
+    let password_hash = hash_pass(&new_password.as_str(), &salt);
+
+    sqlx::query!(
+        r#"
+        UPDATE users SET
+            pass = ?1,
+            salt = ?2
+        WHERE id = ?3
+        "#,
+        password_hash,
+        salt,
+        user_id,
+    )
+    .execute(&request.state().db)
+    .await?;
+
+    user_list(&request.state().db).await
 }

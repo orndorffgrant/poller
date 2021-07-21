@@ -1,6 +1,3 @@
-admin user list
-admin user add
-admin user delete
 admin user set password
 creator poll list with links
 creator poll list "new" link
