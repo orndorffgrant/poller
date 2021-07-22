@@ -6,6 +6,7 @@ only edit poll if on correct creator
 poll-creator can see who voted for who (configurable to make public)
 poll-creator bypasses cookie gaurd
 
+"poller init data.db" (creates file, runs migrations, and adds admin user)
 "poller run data.db" (allows for other subcommands in future)
 create database file if doesn't exist
 accept database file path as argument

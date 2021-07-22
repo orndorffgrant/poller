@@ -233,7 +233,6 @@ pub async fn change_user_password(mut request: crate::Request) -> tide::Result {
     let new_password = new_password.unwrap();
 
     let salt = gen_salt();
-
     let password_hash = hash_pass(&new_password.as_str(), &salt);
 
     sqlx::query!(
