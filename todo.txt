@@ -1,10 +1,6 @@
-admin user set password
-creator poll list with links
-creator poll list "new" link
 admin or creator user: user settings page, change password
-only edit poll if on correct creator
 poll-creator can see who voted for who (configurable to make public)
-poll-creator bypasses cookie gaurd
+redirect hello to / when logged in
 
 "poller init data.db" (creates file, runs migrations, and adds admin user)
 "poller run data.db" (allows for other subcommands in future)
@@ -18,6 +14,10 @@ readme
 
 publish version 0.1.0
 
+demo version? at poller-demo.orndorffgrant.com probably. include one visible poll.
+
+use middleware for user role check/authorizing routes
+update to alpinejs 3
 finish allow_participant_options
 edit page: make inputs controlled by alpine, and do extra hidden checkbox true/false trick for booleans
 edit page: unsaved changes status and leave confirm

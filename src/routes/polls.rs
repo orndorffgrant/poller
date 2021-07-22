@@ -34,6 +34,16 @@ const POLL_TYPE_SCORE: &str = "score";
 // }
 
 pub async fn new(request: crate::Request) -> tide::Result {
+    let session = request.session();
+    let role: Option<String> = session.get("role");
+    if role != Some("creator".to_string()) {
+        return Ok(Redirect::temporary("/").into())
+    }
+    let user_id: Option<i64> = session.get("user_id");
+    if user_id.is_none() {
+        return Ok(Redirect::temporary("/logout").into())
+    }
+    let user_id = user_id.unwrap();
     let new_id: String = rand::thread_rng()
         .sample_iter(&Alphanumeric)
         .take(10)
@@ -45,14 +55,16 @@ pub async fn new(request: crate::Request) -> tide::Result {
             id,
             title,
             description,
-            poll_type
+            poll_type,
+            user_id
         )
-        VALUES (?1, ?2, ?3, ?4)
+        VALUES (?1, ?2, ?3, ?4, ?5)
         "#,
         new_id,
         "",
         "",
-        POLL_TYPE_SINGLE
+        POLL_TYPE_SINGLE,
+        user_id,
     )
     .execute(&request.state().db)
     .await?;
@@ -100,85 +112,96 @@ struct TakePagePollQueryResult {
     allow_participant_options: bool,
     poll_type: String,
     published: bool,
+    user_id: i64,
 }
 
 pub async fn take_page(request: crate::Request) -> tide::Result {
-    let id = request.param("poll_id")?;
-    if request.cookie(id).is_some() {
-        redirect_to_results(id, false)
-    } else {
-        let p_opt = sqlx::query_as!(
-            TakePagePollQueryResult,
-            r#"
-        SELECT
-            id,
-            title,
-            description,
-            require_name,
-            allow_participant_options,
-            poll_type,
-            published
-        FROM polls
-        WHERE id = ?1
-        "#,
-            id
-        )
-        .fetch_optional(&request.state().db)
-        .await?;
-
-        if let Some(p) = p_opt {
-            if !p.published {
-                Ok(tide::Response::builder(404).build())
-            } else {
-                let options = sqlx::query_as!(
-                    EditPageOptionQueryResult,
-                    r#"
-                SELECT
-                    id,
-                    name
-                FROM options
-                WHERE poll_id = ?1
-                ORDER BY order_index
-                "#,
-                    id
-                )
-                .fetch_all(&request.state().db)
-                .await?;
-                let html_title = if p.title.is_empty() {
-                    "New Poll"
-                } else {
-                    &p.title
-                };
-                Ok(TakePage {
-                    html_title: html_title.to_string(),
-                    id: p.id,
-                    title: p.title,
-                    description: p.description,
-                    require_name: p.require_name,
-                    allow_participant_options: p.allow_participant_options,
-                    poll_type: p.poll_type,
-                    options: options
-                        .iter()
-                        .map(|o| EditPageOption {
-                            id: o.id,
-                            name: o.name.to_owned(),
-                        })
-                        .collect(),
-                }
-                .into())
-            }
-        } else {
-            Ok(tide::Response::builder(404)
-                .body(
-                    NotFoundTemplate {
-                        html_title: "Not Found".to_string(),
-                    }
-                    .to_string(),
-                )
-                .content_type(tide::http::mime::HTML)
-                .build())
-        }
+    let session = request.session();
+    let user_id: Option<i64> = session.get("user_id");
+    if user_id.is_none() {
+        return Ok(Redirect::temporary("/logout").into())
     }
+    let user_id = user_id.unwrap();
+    let id = request.param("poll_id")?;
+    let p_opt = sqlx::query_as!(
+        TakePagePollQueryResult,
+        r#"
+    SELECT
+        id,
+        title,
+        description,
+        require_name,
+        allow_participant_options,
+        poll_type,
+        published,
+        user_id
+    FROM polls
+    WHERE id = ?1
+    "#,
+        id
+    )
+    .fetch_optional(&request.state().db)
+    .await?;
+
+    let not_found = Ok(tide::Response::builder(404)
+        .body(
+            NotFoundTemplate {
+                html_title: "Not Found".to_string(),
+            }
+            .to_string(),
+        )
+        .content_type(tide::http::mime::HTML)
+        .build());
+    if p_opt.is_none() {
+        return not_found
+    }
+
+    let p = p_opt.unwrap();
+
+    if !p.published {
+        return not_found
+    }
+
+    if request.cookie(id).is_some() && p.user_id != user_id {
+        return redirect_to_results(id, false)
+    }
+
+    let options = sqlx::query_as!(
+        EditPageOptionQueryResult,
+        r#"
+    SELECT
+        id,
+        name
+    FROM options
+    WHERE poll_id = ?1
+    ORDER BY order_index
+    "#,
+        id
+    )
+    .fetch_all(&request.state().db)
+    .await?;
+    let html_title = if p.title.is_empty() {
+        "New Poll"
+    } else {
+        &p.title
+    };
+    Ok(TakePage {
+        html_title: html_title.to_string(),
+        id: p.id,
+        title: p.title,
+        description: p.description,
+        require_name: p.require_name,
+        allow_participant_options: p.allow_participant_options,
+        poll_type: p.poll_type,
+        options: options
+            .iter()
+            .map(|o| EditPageOption {
+                id: o.id,
+                name: o.name.to_owned(),
+            })
+            .collect(),
+    }
+    .into())
 }
 
 #[derive(FromRow)]
@@ -197,6 +220,16 @@ struct EditPageOptionQueryResult {
     name: String,
 }
 pub async fn edit_page(request: crate::Request) -> tide::Result {
+    let session = request.session();
+    let role: Option<String> = session.get("role");
+    if role != Some("creator".to_string()) {
+        return Ok(Redirect::temporary("/").into())
+    }
+    let user_id: Option<i64> = session.get("user_id");
+    if user_id.is_none() {
+        return Ok(Redirect::temporary("/logout").into())
+    }
+    let user_id = user_id.unwrap();
     let id = request.param("poll_id")?;
     let p_opt = sqlx::query_as!(
         EditPagePollQueryResult,
@@ -210,9 +243,10 @@ pub async fn edit_page(request: crate::Request) -> tide::Result {
             poll_type,
             published
         FROM polls
-        WHERE id = ?1
+        WHERE id = ?1 AND user_id = ?2
         "#,
-        id
+        id,
+        user_id
     )
     .fetch_optional(&request.state().db)
     .await?;
@@ -288,6 +322,16 @@ struct SavePollBody {
     options: Vec<SavePollBodyOption>,
 }
 pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
+    let session = request.session();
+    let role: Option<String> = session.get("role");
+    if role != Some("creator".to_string()) {
+        return Ok(Redirect::temporary("/").into())
+    }
+    let user_id: Option<i64> = session.get("user_id");
+    if user_id.is_none() {
+        return Ok(Redirect::temporary("/logout").into())
+    }
+    let user_id = user_id.unwrap();
     let body: SavePollBody = request.body_json().await?;
     let id = request.param("poll_id")?;
 
@@ -302,7 +346,7 @@ pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
         require_name = ?3,
         allow_participant_options = ?4,
         poll_type = ?5
-        WHERE id = ?6
+        WHERE id = ?6 AND user_id = ?7
         "#,
         body.title,
         body.description,
@@ -310,6 +354,7 @@ pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
         allow_participant_options,
         body.poll_type,
         id,
+        user_id,
     )
     .execute(&request.state().db)
     .await?;
@@ -415,15 +460,27 @@ struct Published {
     published: bool,
 }
 pub async fn edit_page_toggle_publish(request: crate::Request) -> tide::Result {
+    let session = request.session();
+    let role: Option<String> = session.get("role");
+    if role != Some("creator".to_string()) {
+        return Ok(Redirect::temporary("/").into())
+    }
+    let user_id: Option<i64> = session.get("user_id");
+    if user_id.is_none() {
+        return Ok(Redirect::temporary("/logout").into())
+    }
+    let user_id = user_id.unwrap();
+
     let id = request.param("poll_id")?;
 
     sqlx::query!(
         r#"
         UPDATE polls SET
         published = ((published | 1) - (published & 1))
-        WHERE id = ?1
+        WHERE id = ?1 AND user_id = ?2
         "#,
-        id
+        id,
+        user_id,
     )
     .execute(&request.state().db)
     .await?;
@@ -752,8 +809,32 @@ pub async fn results_page(request: crate::Request) -> tide::Result {
 }
 
 pub async fn poll_list_page(request: crate::Request) -> tide::Result {
+    let session = request.session();
+    let role: Option<String> = session.get("role");
+    if role != Some("creator".to_string()) {
+        return Ok(Redirect::temporary("/").into())
+    }
+    let id: Option<i64> = session.get("user_id");
+    if id.is_none() {
+        return Ok(Redirect::temporary("/logout").into())
+    }
+    let id = id.unwrap();
+    let polls = sqlx::query_as!(
+        PollListPoll,
+        r#"
+        SELECT
+            id,
+            title
+        FROM polls
+        WHERE user_id = ?1
+        "#,
+        id
+    )
+    .fetch_all(&request.state().db)
+    .await?;
     Ok(PollListPage {
         html_title: "Poll List".to_string(),
+        polls: polls,
     }
     .into())
 }

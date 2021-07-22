@@ -1,3 +1,5 @@
+use std::task::Poll;
+
 use askama::Template;
 use serde::Serialize;
 
@@ -68,8 +70,14 @@ pub struct ResultsPage {
     pub largest_score: i64,
 }
 
+#[derive(Serialize)]
+pub struct PollListPoll {
+    pub id: String,
+    pub title: String,
+}
 #[derive(Template)]
 #[template(path = "polls/poll_list_page.html")]
 pub struct PollListPage {
     pub html_title: String,
+    pub polls: Vec<PollListPoll>,
 }
