@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+
+{% block content %}
+{% include "user_header_links.html" %}
+<div>
+    <h1 class="text-2xl pt-6 pb-2 text-center">User Settings</h1>
+    <div
+        class="flex flex-col items-center"
+    >
+        <div class="pt-4">
+            Username: {{name}}
+        </div>
+    </div>
+    {% include "settings_password_form.html" %}
+</div>
+{% endblock %}

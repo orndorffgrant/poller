@@ -125,10 +125,13 @@ async fn main() -> tide::Result<()> {
     login.get(routes::users::login_page);
     login.post(routes::users::login);
     app.at("/logout").get(routes::users::logout);
+    app.at("/settings").get(routes::users::settings_page);
     app.at("/admin").get(routes::users::user_list_page);
 
     let mut users = app.at("/user");
     users.post(routes::users::new_user);
+    users.at("/password").put(routes::users::change_my_password);
+
     let mut user = users.at("/:user_id");
     user.delete(routes::users::delete_user);
     user.at("/password").put(routes::users::change_user_password);

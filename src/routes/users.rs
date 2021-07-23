@@ -251,3 +251,69 @@ pub async fn change_user_password(mut request: crate::Request) -> tide::Result {
 
     user_list(&request.state().db).await
 }
+
+#[derive(FromRow)]
+struct UserName {
+    name: String,
+}
+pub async fn settings_page(request: crate::Request) -> tide::Result {
+    let session = request.session();
+    let user_id: Option<i64> = session.get("user_id");
+    if user_id.is_none() {
+        return Ok(Redirect::temporary("/logout").into())
+    }
+    let user_id = user_id.unwrap();
+    let user = sqlx::query_as!(
+        UserName,
+        r#"
+        SELECT
+            name
+        FROM users
+        WHERE id = ?1
+        "#,
+        user_id,
+    )
+    .fetch_one(&request.state().db)
+    .await?;
+    Ok(SettingsPage {
+        html_title: "User Settings".to_string(),
+        name: user.name,
+        changed_password: false,
+    }
+    .into())
+}
+
+#[derive(Deserialize)]
+struct NewPasswordBody {
+    pass: String,
+}
+pub async fn change_my_password(mut request: crate::Request) -> tide::Result {
+    let body: NewPasswordBody = request.body_json().await?;
+    let session = request.session();
+    let user_id: Option<i64> = session.get("user_id");
+    if user_id.is_none() {
+        return Ok(Redirect::temporary("/logout").into())
+    }
+    let user_id = user_id.unwrap();
+
+    let salt = gen_salt();
+    let password_hash = hash_pass(&body.pass, &salt);
+
+    sqlx::query!(
+        r#"
+        UPDATE users SET
+            pass = ?1,
+            salt = ?2
+        WHERE id = ?3
+        "#,
+        password_hash,
+        salt,
+        user_id,
+    )
+    .execute(&request.state().db)
+    .await?;
+
+    Ok(SettingsPasswordForm{
+        changed_password: true,
+    }.into())
+}

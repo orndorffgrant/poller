@@ -1,4 +1,4 @@
-admin or creator user: user settings page, change password
+poll list: show if published or not, delete button
 poll-creator can see who voted for who (configurable to make public)
 redirect hello to / when logged in
 
@@ -8,7 +8,7 @@ create database file if doesn't exist
 accept database file path as argument
 
 basic home page: "this is a free and open source basic polling application, intended for self hosting, or small shared instances"
-clean up all warnings
+clean up all warnings and failed web requests (favicon) format
 github action to build/release
 readme
 
