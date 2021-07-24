@@ -7,7 +7,7 @@ pub async fn root(request: crate::Request) -> tide::Result {
     let role: Option<String> = session.get("role");
     match role {
         None => {
-            Ok(Redirect::temporary("/hello").into())
+            Ok(Redirect::temporary("/login").into())
         },
         Some(role) => {
             if role == "admin" {
@@ -17,11 +17,4 @@ pub async fn root(request: crate::Request) -> tide::Result {
             }
         },
     }
-}
-
-pub async fn hello(_request: crate::Request) -> tide::Result {
-    Ok(HomeTemplate {
-        html_title: "Home".to_string(),
-    }
-    .into())
 }

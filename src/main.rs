@@ -119,7 +119,6 @@ async fn main() -> tide::Result<()> {
     app.at("/assets/alpine.js").get(assets_alpine);
 
     app.at("/").get(routes::home::root);
-    app.at("/hello").get(routes::home::hello);
 
     let mut login = app.at("/login");
     login.get(routes::users::login_page);
