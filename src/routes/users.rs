@@ -7,10 +7,10 @@ use std::task::Poll;
 use anyhow::Result;
 use hex;
 use rand::prelude::*;
-use rand::{distributions::Alphanumeric, Rng};
 use rand::rngs::StdRng;
+use rand::{distributions::Alphanumeric, Rng};
 use serde::Deserialize;
-use sha2::{Sha512, Digest};
+use sha2::{Digest, Sha512};
 use sqlx::prelude::*;
 use sqlx::SqlitePool;
 use tide::Middleware;
@@ -35,7 +35,12 @@ fn gen_salt() -> String {
     salt
 }
 
-pub(crate) async fn create_user(db: &SqlitePool, username: &str, password: &str, role: &str) -> anyhow::Result<()> {
+pub(crate) async fn create_user(
+    db: &SqlitePool,
+    username: &str,
+    password: &str,
+    role: &str,
+) -> anyhow::Result<()> {
     let salt = gen_salt();
     let password_hash = hash_pass(password, &salt);
     sqlx::query!(
@@ -52,7 +57,9 @@ pub(crate) async fn create_user(db: &SqlitePool, username: &str, password: &str,
         password_hash,
         salt,
         role,
-    ).execute(db).await?;
+    )
+    .execute(db)
+    .await?;
     Ok(())
 }
 
@@ -60,16 +67,12 @@ pub async fn login_page(request: crate::Request) -> tide::Result {
     let session = request.session();
     let role: Option<String> = session.get("role");
     match role {
-        None => {
-            Ok(LoginPage {
-                html_title: "Log in".to_string(),
-                wrong: false,
-            }
-            .into())
-        },
-        Some(_) => {
-            Ok(Redirect::temporary("/").into())
-        },
+        None => Ok(LoginPage {
+            html_title: "Log in".to_string(),
+            wrong: false,
+        }
+        .into()),
+        Some(_) => Ok(Redirect::temporary("/").into()),
     }
 }
 
@@ -103,18 +106,10 @@ pub async fn login(mut request: crate::Request) -> tide::Result {
     .fetch_optional(&request.state().db)
     .await?;
     match user_opt {
-        None => {
-            Ok(LoginPageForm {
-                wrong: true,
-            }
-            .into())
-        },
+        None => Ok(LoginPageForm { wrong: true }.into()),
         Some(user) => {
             if hash_pass(&body.pass, &user.salt) != user.pass {
-                Ok(LoginPageForm {
-                    wrong: true,
-                }
-                .into())
+                Ok(LoginPageForm { wrong: true }.into())
             } else {
                 let session = request.session_mut();
                 session.insert("user_id", user.id)?;
@@ -129,7 +124,7 @@ pub async fn login(mut request: crate::Request) -> tide::Result {
                         .build())
                 }
             }
-        },
+        }
     }
 }
 
@@ -144,7 +139,7 @@ pub async fn user_list_page(request: crate::Request) -> tide::Result {
     let session = request.session();
     let role: Option<String> = session.get("role");
     if role != Some("admin".to_string()) {
-        return Ok(Redirect::temporary("/").into())
+        return Ok(Redirect::temporary("/").into());
     }
     let users = sqlx::query_as!(
         User,
@@ -178,10 +173,7 @@ async fn user_list(db: &SqlitePool) -> tide::Result {
     )
     .fetch_all(db)
     .await?;
-    Ok(UserList {
-        users: users,
-    }
-    .into())
+    Ok(UserList { users: users }.into())
 }
 
 #[derive(Deserialize)]
@@ -194,7 +186,7 @@ pub async fn new_user(mut request: crate::Request) -> tide::Result {
     let session = request.session();
     let role: Option<String> = session.get("role");
     if role != Some("admin".to_string()) {
-        return Ok(Redirect::temporary("/").into())
+        return Ok(Redirect::temporary("/").into());
     }
     create_user(&request.state().db, &body.name, &body.pass, "creator").await?;
     user_list(&request.state().db).await
@@ -208,7 +200,7 @@ pub async fn delete_user(mut request: crate::Request) -> tide::Result {
     let session = request.session();
     let role: Option<String> = session.get("role");
     if role != Some("admin".to_string()) {
-        return Ok(Redirect::temporary("/").into())
+        return Ok(Redirect::temporary("/").into());
     }
     let polls = sqlx::query_as!(
         StringId,
@@ -275,10 +267,10 @@ pub async fn change_user_password(mut request: crate::Request) -> tide::Result {
     let session = request.session();
     let role: Option<String> = session.get("role");
     if role != Some("admin".to_string()) {
-        return Ok(Redirect::temporary("/").into())
+        return Ok(Redirect::temporary("/").into());
     }
     if new_password.is_none() {
-        return Ok(tide::Response::builder(400).build())
+        return Ok(tide::Response::builder(400).build());
     }
     let new_password = new_password.unwrap();
 
@@ -310,7 +302,7 @@ pub async fn settings_page(request: crate::Request) -> tide::Result {
     let session = request.session();
     let user_id: Option<i64> = session.get("user_id");
     if user_id.is_none() {
-        return Ok(Redirect::temporary("/logout").into())
+        return Ok(Redirect::temporary("/logout").into());
     }
     let user_id = user_id.unwrap();
     let user = sqlx::query_as!(
@@ -342,7 +334,7 @@ pub async fn change_my_password(mut request: crate::Request) -> tide::Result {
     let session = request.session();
     let user_id: Option<i64> = session.get("user_id");
     if user_id.is_none() {
-        return Ok(Redirect::temporary("/logout").into())
+        return Ok(Redirect::temporary("/logout").into());
     }
     let user_id = user_id.unwrap();
 
@@ -363,7 +355,8 @@ pub async fn change_my_password(mut request: crate::Request) -> tide::Result {
     .execute(&request.state().db)
     .await?;
 
-    Ok(SettingsPasswordForm{
+    Ok(SettingsPasswordForm {
         changed_password: true,
-    }.into())
+    }
+    .into())
 }

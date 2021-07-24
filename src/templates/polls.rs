@@ -55,6 +55,17 @@ pub struct TakePage {
 }
 
 #[derive(Serialize)]
+pub struct BreakdownOptionSubmission {
+    pub participant_name: String,
+    pub score: i64,
+}
+#[derive(Serialize)]
+pub struct BreakdownOption {
+    pub name: String,
+    pub order_index: i64,
+    pub submissions: Vec<BreakdownOptionSubmission>,
+}
+#[derive(Serialize)]
 pub struct OptionResult {
     pub id: i64,
     pub name: String,
@@ -66,8 +77,11 @@ pub struct OptionResult {
 pub struct ResultsPage {
     pub html_title: String,
     pub title: String,
+    pub poll_type: String,
     pub option_results: Vec<OptionResult>,
     pub largest_score: i64,
+    pub show_breakdown: bool,
+    pub breakdown_options: Vec<BreakdownOption>,
 }
 
 #[derive(Serialize)]

@@ -1,6 +1,6 @@
-use rand::{distributions::Alphanumeric, Rng};
 use rand::prelude::*;
 use rand::rngs::StdRng;
+use rand::{distributions::Alphanumeric, Rng};
 use sqlx::migrate;
 use sqlx::prelude::*;
 use sqlx::sqlite::SqlitePool;
@@ -70,12 +70,14 @@ async fn main() -> tide::Result<()> {
         r#"
         SELECT id FROM users WHERE role = "admin"
         "#
-    ).fetch_optional(&db).await?;
+    )
+    .fetch_optional(&db)
+    .await?;
 
     match admin_opt {
         Some(_) => {
             log::info!("admin user exists")
-        },
+        }
         None => {
             let rng = StdRng::from_entropy();
             let password: String = rng
@@ -84,7 +86,10 @@ async fn main() -> tide::Result<()> {
                 .map(char::from)
                 .collect();
             routes::users::create_user(&db, "admin", &password, "admin").await?;
-            log::info!("admin user created\nusername: admin\npassword: {}", password)
+            log::info!(
+                "admin user created\nusername: admin\npassword: {}",
+                password
+            )
         }
     };
 
@@ -133,7 +138,8 @@ async fn main() -> tide::Result<()> {
 
     let mut user = users.at("/:user_id");
     user.delete(routes::users::delete_user);
-    user.at("/password").put(routes::users::change_user_password);
+    user.at("/password")
+        .put(routes::users::change_user_password);
 
     app.at("/polls").get(routes::polls::poll_list_page);
     let mut polls = app.at("/poll");

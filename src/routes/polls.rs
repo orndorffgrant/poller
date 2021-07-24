@@ -42,11 +42,11 @@ pub async fn new(request: crate::Request) -> tide::Result {
     let session = request.session();
     let role: Option<String> = session.get("role");
     if role != Some("creator".to_string()) {
-        return Ok(Redirect::temporary("/").into())
+        return Ok(Redirect::temporary("/").into());
     }
     let user_id: Option<i64> = session.get("user_id");
     if user_id.is_none() {
-        return Ok(Redirect::temporary("/logout").into())
+        return Ok(Redirect::temporary("/logout").into());
     }
     let user_id = user_id.unwrap();
     let new_id: String = rand::thread_rng()
@@ -123,10 +123,6 @@ struct TakePagePollQueryResult {
 pub async fn take_page(request: crate::Request) -> tide::Result {
     let session = request.session();
     let user_id: Option<i64> = session.get("user_id");
-    if user_id.is_none() {
-        return Ok(Redirect::temporary("/logout").into())
-    }
-    let user_id = user_id.unwrap();
     let id = request.param("poll_id")?;
     let p_opt = sqlx::query_as!(
         TakePagePollQueryResult,
@@ -158,17 +154,17 @@ pub async fn take_page(request: crate::Request) -> tide::Result {
         .content_type(tide::http::mime::HTML)
         .build());
     if p_opt.is_none() {
-        return not_found
+        return not_found;
     }
 
     let p = p_opt.unwrap();
 
     if !p.published {
-        return not_found
+        return not_found;
     }
 
-    if request.cookie(id).is_some() && p.user_id != user_id {
-        return redirect_to_results(id, false)
+    if request.cookie(id).is_some() && Some(p.user_id) != user_id {
+        return redirect_to_results(id, false);
     }
 
     let options = sqlx::query_as!(
@@ -228,11 +224,11 @@ pub async fn edit_page(request: crate::Request) -> tide::Result {
     let session = request.session();
     let role: Option<String> = session.get("role");
     if role != Some("creator".to_string()) {
-        return Ok(Redirect::temporary("/").into())
+        return Ok(Redirect::temporary("/").into());
     }
     let user_id: Option<i64> = session.get("user_id");
     if user_id.is_none() {
-        return Ok(Redirect::temporary("/logout").into())
+        return Ok(Redirect::temporary("/logout").into());
     }
     let user_id = user_id.unwrap();
     let id = request.param("poll_id")?;
@@ -330,11 +326,11 @@ pub async fn edit_page_save(mut request: crate::Request) -> tide::Result {
     let session = request.session();
     let role: Option<String> = session.get("role");
     if role != Some("creator".to_string()) {
-        return Ok(Redirect::temporary("/").into())
+        return Ok(Redirect::temporary("/").into());
     }
     let user_id: Option<i64> = session.get("user_id");
     if user_id.is_none() {
-        return Ok(Redirect::temporary("/logout").into())
+        return Ok(Redirect::temporary("/logout").into());
     }
     let user_id = user_id.unwrap();
     let body: SavePollBody = request.body_json().await?;
@@ -468,11 +464,11 @@ pub async fn edit_page_toggle_publish(request: crate::Request) -> tide::Result {
     let session = request.session();
     let role: Option<String> = session.get("role");
     if role != Some("creator".to_string()) {
-        return Ok(Redirect::temporary("/").into())
+        return Ok(Redirect::temporary("/").into());
     }
     let user_id: Option<i64> = session.get("user_id");
     if user_id.is_none() {
-        return Ok(Redirect::temporary("/logout").into())
+        return Ok(Redirect::temporary("/logout").into());
     }
     let user_id = user_id.unwrap();
 
@@ -511,15 +507,19 @@ pub async fn edit_page_toggle_publish(request: crate::Request) -> tide::Result {
 
 struct ResultsPollDetails {
     title: String,
+    require_name: bool,
+    poll_type: String,
 }
 #[derive(FromRow)]
 struct SubmissionQueryResult {
     score: i64,
+    participant_name: Option<String>,
     option_id: i64,
     option_name: String,
     order_index: i64,
 }
 async fn create_results_page(
+    is_owner: bool,
     poll_id: &str,
     db: &SqlitePool,
     poll: ResultsPollDetails,
@@ -529,7 +529,8 @@ async fn create_results_page(
         r#"
         SELECT
             COALESCE(s.score, 0) AS "score!",
-            o.id as option_id,
+            s.participant_name,
+            o.id AS option_id,
             o.name AS option_name,
             o.order_index
         FROM options o
@@ -541,6 +542,7 @@ async fn create_results_page(
     )
     .fetch_all(db)
     .await?;
+
     let option_result_map: HashMap<i64, OptionResult> =
         submissions
             .iter()
@@ -560,19 +562,61 @@ async fn create_results_page(
     let mut option_results: Vec<OptionResult> =
         option_result_map.into_iter().map(|r| r.1).collect();
     option_results.sort_by_key(|r| r.order_index);
+
     let largest_score = option_results
         .iter()
         .fold(1, |largest, r| max(largest, r.score));
+
+    let show_breakdown = poll.require_name && is_owner;
+    let breakdown_options: Vec<BreakdownOption> = if show_breakdown {
+        let option_submissions_map: HashMap<i64, BreakdownOption> =
+            submissions
+                .iter()
+                .fold(HashMap::new(), |mut options, submission| {
+                    let option =
+                        options
+                            .entry(submission.option_id)
+                            .or_insert_with(|| BreakdownOption {
+                                name: submission.option_name.clone(),
+                                order_index: submission.order_index,
+                                submissions: vec![],
+                            });
+                    if submission.score > 0 {
+                        let backup_name = "(Unknown participant)".to_string();
+                        let name = submission
+                            .participant_name
+                            .as_ref()
+                            .or(Some(&backup_name))
+                            .unwrap();
+                        option.submissions.push(BreakdownOptionSubmission {
+                            participant_name: name.to_owned(),
+                            score: submission.score,
+                        });
+                    }
+                    options
+                });
+        let mut options: Vec<BreakdownOption> =
+            option_submissions_map.into_iter().map(|r| r.1).collect();
+        options.sort_by_key(|r| r.order_index);
+        options
+    } else {
+        vec![]
+    };
+
     Ok(ResultsPage {
         html_title: format!("Results | {}", poll.title),
         title: poll.title,
+        poll_type: poll.poll_type,
         option_results: option_results,
         largest_score: largest_score,
+        show_breakdown,
+        breakdown_options,
     })
 }
 
 #[derive(FromRow)]
 struct SubmitPollQueryResult {
+    user_id: i64,
     title: String,
     require_name: bool,
     allow_participant_options: bool,
@@ -585,6 +629,7 @@ struct OptionScore {
     score: i64,
 }
 async fn submit(
+    user_id: Option<i64>,
     poll_id: &str,
     db: &SqlitePool,
     poll_type: &str, // TODO replace poll_type string here with generic/typed function
@@ -600,7 +645,8 @@ async fn submit(
             require_name,
             allow_participant_options,
             poll_type,
-            published
+            published,
+            user_id
         FROM polls
         WHERE id = ?1
         "#,
@@ -651,7 +697,7 @@ async fn submit(
                 format!("{}=true; HttpOnly; Path=/; Expires=Fri, 31 Dec 9999 12:00:00 GMT; SameSite=Lax", poll_id),
             )
             .body(
-                create_results_page(poll_id, db, ResultsPollDetails { title: poll.title })
+                create_results_page(user_id == Some(poll.user_id), poll_id, db, ResultsPollDetails { title: poll.title, require_name: poll.require_name, poll_type: poll.poll_type })
                     .await?
                     .to_string(),
             )
@@ -665,6 +711,8 @@ struct SingleSubmission {
     participant_name: Option<String>,
 }
 pub async fn submit_single(mut request: crate::Request) -> tide::Result {
+    let session = request.session();
+    let user_id: Option<i64> = session.get("user_id");
     let body: SingleSubmission = request.body_json().await?;
     let id = request.param("poll_id")?;
 
@@ -677,6 +725,7 @@ pub async fn submit_single(mut request: crate::Request) -> tide::Result {
             Ok(tide::Response::builder(400).build())
         } else {
             submit(
+                user_id,
                 id,
                 &request.state().db,
                 POLL_TYPE_SINGLE,
@@ -704,6 +753,8 @@ struct MultiSubmission {
     participant_name: Option<String>,
 }
 pub async fn submit_multi(mut request: crate::Request) -> tide::Result {
+    let session = request.session();
+    let user_id: Option<i64> = session.get("user_id");
     let body: MultiSubmission = request.body_json().await?;
     let id = request.param("poll_id")?;
 
@@ -726,6 +777,7 @@ pub async fn submit_multi(mut request: crate::Request) -> tide::Result {
         };
 
         submit(
+            user_id,
             id,
             &request.state().db,
             POLL_TYPE_MULTI,
@@ -747,6 +799,8 @@ struct ScoreSubmission {
     participant_name: Option<String>,
 }
 pub async fn submit_score(mut request: crate::Request) -> tide::Result {
+    let session = request.session();
+    let user_id: Option<i64> = session.get("user_id");
     let body: ScoreSubmission = request.body_json().await?;
     let id = request.param("poll_id")?;
 
@@ -769,6 +823,7 @@ pub async fn submit_score(mut request: crate::Request) -> tide::Result {
         };
 
         submit(
+            user_id,
             id,
             &request.state().db,
             POLL_TYPE_SCORE,
@@ -784,15 +839,23 @@ pub async fn submit_score(mut request: crate::Request) -> tide::Result {
 struct ResultsPollQueryResult {
     title: String,
     published: bool,
+    user_id: i64,
+    require_name: bool,
+    poll_type: String,
 }
 pub async fn results_page(request: crate::Request) -> tide::Result {
+    let session = request.session();
+    let user_id: Option<i64> = session.get("user_id");
     let id = request.param("poll_id")?;
     let poll = sqlx::query_as!(
         ResultsPollQueryResult,
         r#"
         SELECT
             title,
-            published
+            published,
+            user_id,
+            require_name,
+            poll_type
         FROM polls
         WHERE id = ?1
         "#,
@@ -804,9 +867,14 @@ pub async fn results_page(request: crate::Request) -> tide::Result {
         Ok(tide::Response::builder(404).build())
     } else {
         Ok(create_results_page(
+            user_id == Some(poll.user_id),
             &id,
             &request.state().db,
-            ResultsPollDetails { title: poll.title },
+            ResultsPollDetails {
+                title: poll.title,
+                require_name: poll.require_name,
+                poll_type: poll.poll_type,
+            },
         )
         .await?
         .into())
@@ -817,11 +885,11 @@ pub async fn poll_list_page(request: crate::Request) -> tide::Result {
     let session = request.session();
     let role: Option<String> = session.get("role");
     if role != Some("creator".to_string()) {
-        return Ok(Redirect::temporary("/").into())
+        return Ok(Redirect::temporary("/").into());
     }
     let id: Option<i64> = session.get("user_id");
     if id.is_none() {
-        return Ok(Redirect::temporary("/logout").into())
+        return Ok(Redirect::temporary("/logout").into());
     }
     let id = id.unwrap();
     let polls = sqlx::query_as!(
@@ -850,7 +918,7 @@ pub async fn delete_poll(mut request: crate::Request) -> tide::Result {
     let session = request.session();
     let user_id: Option<i64> = session.get("user_id");
     if user_id.is_none() {
-        return Ok(Redirect::temporary("/logout").into())
+        return Ok(Redirect::temporary("/logout").into());
     }
     let user_id = user_id.unwrap();
 
@@ -868,7 +936,7 @@ pub async fn delete_poll(mut request: crate::Request) -> tide::Result {
     .fetch_optional(&request.state().db)
     .await?;
     if poll.is_none() {
-        return Ok(Response::builder(404).build())
+        return Ok(Response::builder(404).build());
     }
 
     sqlx::query!(
@@ -915,8 +983,5 @@ pub async fn delete_poll(mut request: crate::Request) -> tide::Result {
     )
     .fetch_all(&request.state().db)
     .await?;
-    Ok(PollList {
-        polls: polls,
-    }
-    .into())
+    Ok(PollList { polls: polls }.into())
 }

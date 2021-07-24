@@ -89,14 +89,45 @@
                 </th>
                 <td>
                     <span class="container">
-                        <span class="on-top" aria-hidden="true">{{result.name}}</span>
-                        <span class="left-paren pl-2" aria-hidden="true">(</span><span class="data px-1">{{result.score}}</span><span class="right-paren" aria-hidden="true">)</span>
+                        <span class="on-top" aria-hidden="true">{{result.name}}</span><span class="left-paren pl-2" aria-hidden="true">(</span><span class="data px-1">{{result.score}}</span><span class="right-paren" aria-hidden="true">)</span>
                     </span>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    {% if show_breakdown %}
+    <h2 class="text-xl pt-10">Breakdown</h2>
+    <div class="text-sm">Only the poll owner (you) can see this.</div>
+    <div class="max-w-screen-sm m-auto pt-2">
+        {% for breakdown_option in breakdown_options %}
+        <div class="flex items-center justify-start py-1">
+            <div class="font-bold pr-2">
+                {{breakdown_option.name}}:
+            </div>
+            <div class="flex flex-wrap items-center justify-start">
+                {% for submission in breakdown_option.submissions %}
+                <div class="flex items-center justify-start pr-2">
+                    <div>
+                        {{submission.participant_name}}
+                    </div>
+                    {% if poll_type == "score" %}
+                    <div class="pl-1">
+                        ({{submission.score}})
+                    </div>
+                    {% endif %}
+                    {% if !loop.last %}
+                    <div>
+                        ,
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 </div>
 <script>
 const resizeObserver = new ResizeObserver(entries => {
