@@ -143,6 +143,7 @@ async fn main() -> tide::Result<()> {
     let mut poll = polls.at("/:poll_id");
     poll.get(routes::polls::take_page);
     poll.put(routes::polls::edit_page_save);
+    poll.delete(routes::polls::delete_poll);
     poll.at("/edit").get(routes::polls::edit_page);
     poll.at("/toggle-publish")
         .post(routes::polls::edit_page_toggle_publish);

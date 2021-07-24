@@ -1,0 +1,31 @@
+<div class="w-full" id="poll-list">
+    {% for poll in polls %}
+    <div class="border border-solid border-black p-2 my-2 w-full">
+        <div class="p-2 flex items-center justify-between">
+            <a class="link" href="/poll/{{poll.id}}">
+                {{poll.title}}
+            </a>
+            <span class="text-xs ml-2 px-2 bg-gray-600 rounded-full text-white">
+            {% if poll.published %}
+                published
+            {% else %}
+                not published
+            {% endif %}
+            </span>
+        </div>
+        <div class="p-2 flex items-center justify-end">
+            <a class="link p-2" href="/poll/{{poll.id}}/edit">Edit Poll</a>
+            <a class="link p-2" href="/poll/{{poll.id}}/results">See Results</a>
+            <button
+                class="button ml-2"
+                hx-delete="/poll/{{poll.id}}"
+                hx-confirm='Are you sure you want to delete poll "{{poll.title}}"? This will delete the results too.'
+                hx-target="#poll-list"
+                hx-swap="outerHTML"
+                >
+                Delete
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>

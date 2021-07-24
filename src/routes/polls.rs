@@ -7,7 +7,7 @@ use rand::{distributions::Alphanumeric, Rng};
 use serde::Deserialize;
 use sqlx::prelude::*;
 use sqlx::SqlitePool;
-use tide::Redirect;
+use tide::{Redirect, Response};
 
 use crate::templates::home::NotFoundTemplate;
 use crate::templates::polls::*;
@@ -32,6 +32,11 @@ const POLL_TYPE_SCORE: &str = "score";
 //         }
 //     }
 // }
+
+#[derive(FromRow)]
+struct StringId {
+    id: String,
+}
 
 pub async fn new(request: crate::Request) -> tide::Result {
     let session = request.session();
@@ -824,7 +829,8 @@ pub async fn poll_list_page(request: crate::Request) -> tide::Result {
         r#"
         SELECT
             id,
-            title
+            title,
+            published
         FROM polls
         WHERE user_id = ?1
         "#,
@@ -834,6 +840,82 @@ pub async fn poll_list_page(request: crate::Request) -> tide::Result {
     .await?;
     Ok(PollListPage {
         html_title: "Poll List".to_string(),
+        polls: polls,
+    }
+    .into())
+}
+
+pub async fn delete_poll(mut request: crate::Request) -> tide::Result {
+    let poll_id = request.param("poll_id")?;
+    let session = request.session();
+    let user_id: Option<i64> = session.get("user_id");
+    if user_id.is_none() {
+        return Ok(Redirect::temporary("/logout").into())
+    }
+    let user_id = user_id.unwrap();
+
+    let poll = sqlx::query_as!(
+        StringId,
+        r#"
+        SELECT
+            id
+        FROM polls
+        WHERE id = ?1 and user_id = ?2
+        "#,
+        poll_id,
+        user_id,
+    )
+    .fetch_optional(&request.state().db)
+    .await?;
+    if poll.is_none() {
+        return Ok(Response::builder(404).build())
+    }
+
+    sqlx::query!(
+        r#"
+        DELETE FROM submissions
+        WHERE poll_id = ?1
+        "#,
+        poll_id,
+    )
+    .execute(&request.state().db)
+    .await?;
+
+    sqlx::query!(
+        r#"
+        DELETE FROM options
+        WHERE poll_id = ?1
+        "#,
+        poll_id,
+    )
+    .execute(&request.state().db)
+    .await?;
+
+    sqlx::query!(
+        r#"
+        DELETE FROM polls
+        WHERE id = ?1
+        "#,
+        poll_id,
+    )
+    .execute(&request.state().db)
+    .await?;
+
+    let polls = sqlx::query_as!(
+        PollListPoll,
+        r#"
+        SELECT
+            id,
+            title,
+            published
+        FROM polls
+        WHERE user_id = ?1
+        "#,
+        user_id
+    )
+    .fetch_all(&request.state().db)
+    .await?;
+    Ok(PollList {
         polls: polls,
     }
     .into())

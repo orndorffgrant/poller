@@ -200,6 +200,9 @@ pub async fn new_user(mut request: crate::Request) -> tide::Result {
     user_list(&request.state().db).await
 }
 
+struct StringId {
+    id: String,
+}
 pub async fn delete_user(mut request: crate::Request) -> tide::Result {
     let user_id = request.param("user_id")?;
     let session = request.session();
@@ -207,6 +210,53 @@ pub async fn delete_user(mut request: crate::Request) -> tide::Result {
     if role != Some("admin".to_string()) {
         return Ok(Redirect::temporary("/").into())
     }
+    let polls = sqlx::query_as!(
+        StringId,
+        r#"
+        SELECT
+            id
+        FROM polls
+        WHERE user_id = ?1
+        "#,
+        user_id
+    )
+    .fetch_all(&request.state().db)
+    .await?;
+
+    for poll in polls {
+        let poll_id = poll.id;
+
+        sqlx::query!(
+            r#"
+            DELETE FROM submissions
+            WHERE poll_id = ?1
+            "#,
+            poll_id,
+        )
+        .execute(&request.state().db)
+        .await?;
+
+        sqlx::query!(
+            r#"
+            DELETE FROM options
+            WHERE poll_id = ?1
+            "#,
+            poll_id,
+        )
+        .execute(&request.state().db)
+        .await?;
+
+        sqlx::query!(
+            r#"
+            DELETE FROM polls
+            WHERE id = ?1
+            "#,
+            poll_id,
+        )
+        .execute(&request.state().db)
+        .await?;
+    }
+
     sqlx::query!(
         r#"
         DELETE FROM users

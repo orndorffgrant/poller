@@ -74,10 +74,17 @@ pub struct ResultsPage {
 pub struct PollListPoll {
     pub id: String,
     pub title: String,
+    pub published: bool,
 }
 #[derive(Template)]
 #[template(path = "polls/poll_list_page.html")]
 pub struct PollListPage {
     pub html_title: String,
+    pub polls: Vec<PollListPoll>,
+}
+
+#[derive(Template)]
+#[template(path = "polls/poll_list_poll_list.html")]
+pub struct PollList {
     pub polls: Vec<PollListPoll>,
 }

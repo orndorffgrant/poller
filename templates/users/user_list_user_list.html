@@ -1,11 +1,11 @@
-<div id="user-list" class="flex flex-col items-center">
+<div id="user-list" class="flex flex-col items-center max-w-screen-sm m-auto">
     {% for user in users %}
-    <div id="user-{{user.id}}" class="border border-solid border-black p-2 m-2">
+    <div id="user-{{user.id}}" class="border border-solid border-black p-2 my-2 w-full">
         <div class="pb-2">{{user.name}}</div>
         <button
             class="button"
             hx-delete="/user/{{user.id}}"
-            hx-confirm='Are you sure you want to delete user "{{user.name}}"?'
+            hx-confirm='Are you sure you want to delete user "{{user.name}}"? This will delete all of this users polls and poll results too.'
             hx-target="#user-list"
             hx-swap="outerHTML"
             >

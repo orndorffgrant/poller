@@ -2,21 +2,12 @@
 
 {% block content %}
 {% include "../users/user_header_links.html" %}
-<div class="flex flex-col items-center">
+<div class="flex flex-col items-center max-w-screen-sm m-auto">
     <h1 class="text-2xl pt-6 pb-2 text-center">Polls</h1>
     <div class="pt-6 pb-6 text-center">
         <a class="button" href="/poll/new">Create new poll</a>
     </div>
-    {% for poll in polls %}
-    <div class="border border-solid border-black p-2 m-2">
-        <div class="p-2">
-            <a class="link" href="/poll/{{poll.id}}">
-                {{poll.title}}
-            </a>
-        </div>
-        <a class="link p-2" href="/poll/{{poll.id}}/edit">Edit Poll</a>
-        <a class="link p-2" href="/poll/{{poll.id}}/results">Results</a>
-    </div>
-    {% endfor %}
+    {% include "poll_list_poll_list.html" %}
 </div>
+
 {% endblock %}
