@@ -1,15 +1,17 @@
+use clap::Clap;
 use rand::prelude::*;
 use rand::rngs::StdRng;
 use rand::{distributions::Alphanumeric, Rng};
 use sqlx::migrate;
 use sqlx::prelude::*;
 use sqlx::sqlite::SqlitePool;
-use std::{env, time::Duration};
+use std::{env, time::Duration, path::Path};
 use tide::{http::cookies::SameSite, log, sessions::SessionMiddleware, Redirect};
 
 mod routes;
 mod session;
 mod templates;
+
 
 #[derive(Clone, Copy)]
 pub struct Features {
@@ -58,10 +60,15 @@ struct AdminUserQueryResult {
     id: i64,
 }
 
-#[async_std::main]
-async fn main() -> tide::Result<()> {
-    tide::log::with_level(tide::log::LevelFilter::Info);
-    let db = SqlitePool::connect("demo.db").await?;
+async fn init(db_path: String) -> tide::Result<SqlitePool> {
+    // check if file exists yet and create it if it doesn't
+    let db_file = Path::new(&db_path);
+    if !db_file.exists() {
+        std::fs::File::create(db_file)?;
+    }
+
+    // open the file as a sqlite db and migrate
+    let db = SqlitePool::connect(&db_path).await?;
     migrate!().run(&db).await?;
 
     // create admin if doesn't exist
@@ -92,6 +99,12 @@ async fn main() -> tide::Result<()> {
             )
         }
     };
+
+    Ok(db)
+}
+
+async fn run(db_path: String) -> tide::Result<()> {
+    let db = init(db_path).await?;
 
     let mut app = tide::with_state(State {
         db: db.clone(),
@@ -162,4 +175,41 @@ async fn main() -> tide::Result<()> {
 
     app.listen("0.0.0.0:8000").await?;
     Ok(())
+}
+
+#[derive(Clap)]
+#[clap(version = "0.1.0")]
+struct Opts {
+    #[clap(subcommand)]
+    subcmd: SubCommand,
+}
+
+#[derive(Clap)]
+enum SubCommand {
+    Init(InitCommand),
+    Run(RunCommand),
+}
+
+#[derive(Clap)]
+struct InitCommand {
+    db_path: String,
+}
+
+#[derive(Clap)]
+struct RunCommand {
+    db_path: String,
+}
+
+#[async_std::main]
+async fn main() -> tide::Result<()> {
+    tide::log::with_level(tide::log::LevelFilter::Info);
+    let opts = Opts::parse();
+    match opts.subcmd {
+        SubCommand::Init(i) => {
+            init(i.db_path).await.map(|_| ())
+        }
+        SubCommand::Run(r) => {
+            run(r.db_path).await
+        }
+    }
 }

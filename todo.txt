@@ -1,10 +1,3 @@
-poll-creator can see who voted for who (configurable to make public)
-
-"poller init data.db" (creates file, runs migrations, and adds admin user)
-"poller run data.db" (allows for other subcommands in future)
-create database file if doesn't exist
-accept database file path as argument
-
 clean up all warnings and failed web requests (favicon) format
 github action to build/release
 readme
