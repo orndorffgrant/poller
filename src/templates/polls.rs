@@ -1,5 +1,3 @@
-use std::task::Poll;
-
 use askama::Template;
 use serde::Serialize;
 

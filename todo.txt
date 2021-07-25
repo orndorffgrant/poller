@@ -1,11 +1,8 @@
-clean up all warnings and failed web requests (favicon) format
-github action to build/release
-readme
-
 publish version 0.1.0
 
 demo version? at poller-demo.orndorffgrant.com probably. include one visible poll.
 
+ensure db gets closed on exit
 use middleware for user role check/authorizing routes
 update to alpinejs 3
 finish allow_participant_options

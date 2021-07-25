@@ -35,7 +35,7 @@ const POLL_TYPE_SCORE: &str = "score";
 
 #[derive(FromRow)]
 struct StringId {
-    id: String,
+    _id: String,
 }
 
 pub async fn new(request: crate::Request) -> tide::Result {
@@ -913,7 +913,7 @@ pub async fn poll_list_page(request: crate::Request) -> tide::Result {
     .into())
 }
 
-pub async fn delete_poll(mut request: crate::Request) -> tide::Result {
+pub async fn delete_poll(request: crate::Request) -> tide::Result {
     let poll_id = request.param("poll_id")?;
     let session = request.session();
     let user_id: Option<i64> = session.get("user_id");
@@ -926,7 +926,7 @@ pub async fn delete_poll(mut request: crate::Request) -> tide::Result {
         StringId,
         r#"
         SELECT
-            id
+            id AS _id
         FROM polls
         WHERE id = ?1 and user_id = ?2
         "#,

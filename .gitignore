@@ -7,7 +7,7 @@
 
 
 demo.db*
-dev.db*
+dev.db-*
 
 assets/*
 !assets/.gitkeep

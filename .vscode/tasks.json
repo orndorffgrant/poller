@@ -11,7 +11,7 @@
         {
             "label": "develop-app.sh",
             "type": "shell",
-            "command": "env POLLER_SECRET=asdfasdfasdfasdfasdfasdfasdffasdf bash develop-app.sh"
+            "command": "bash develop-app.sh"
         },
         {
             "label": "Develop",

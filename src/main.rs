@@ -6,7 +6,7 @@ use sqlx::migrate;
 use sqlx::prelude::*;
 use sqlx::sqlite::SqlitePool;
 use std::{env, time::Duration, path::Path};
-use tide::{http::cookies::SameSite, log, sessions::SessionMiddleware, Redirect};
+use tide::{http::cookies::SameSite, log, sessions::SessionMiddleware};
 
 mod routes;
 mod session;
@@ -57,7 +57,7 @@ async fn assets_alpine(_r: Request) -> tide::Result {
 
 #[derive(FromRow)]
 struct AdminUserQueryResult {
-    id: i64,
+    _id: i64,
 }
 
 async fn init(db_path: String) -> tide::Result<SqlitePool> {
@@ -75,7 +75,7 @@ async fn init(db_path: String) -> tide::Result<SqlitePool> {
     let admin_opt = sqlx::query_as!(
         AdminUserQueryResult,
         r#"
-        SELECT id FROM users WHERE role = "admin"
+        SELECT id AS _id FROM users WHERE role = "admin"
         "#
     )
     .fetch_optional(&db)
@@ -103,7 +103,7 @@ async fn init(db_path: String) -> tide::Result<SqlitePool> {
     Ok(db)
 }
 
-async fn run(db_path: String) -> tide::Result<()> {
+async fn run(db_path: String) -> tide::Result<SqlitePool> {
     let db = init(db_path).await?;
 
     let mut app = tide::with_state(State {
@@ -114,7 +114,7 @@ async fn run(db_path: String) -> tide::Result<()> {
         },
     });
 
-    let session_store = session::PollerSessionStore::from_client(db);
+    let session_store = session::PollerSessionStore::from_client(db.clone());
     let cleanup_store = session_store.clone();
     async_std::task::spawn(async move {
         loop {
@@ -174,7 +174,8 @@ async fn run(db_path: String) -> tide::Result<()> {
     poll.at("/results").get(routes::polls::results_page);
 
     app.listen("0.0.0.0:8000").await?;
-    Ok(())
+
+    Ok(db)
 }
 
 #[derive(Clap)]
@@ -204,12 +205,14 @@ struct RunCommand {
 async fn main() -> tide::Result<()> {
     tide::log::with_level(tide::log::LevelFilter::Info);
     let opts = Opts::parse();
-    match opts.subcmd {
+    let db = match opts.subcmd {
         SubCommand::Init(i) => {
-            init(i.db_path).await.map(|_| ())
+            init(i.db_path).await?
         }
         SubCommand::Run(r) => {
-            run(r.db_path).await
+            run(r.db_path).await?
         }
-    }
+    };
+    db.close().await;
+    Ok(())
 }

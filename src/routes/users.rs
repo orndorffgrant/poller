@@ -1,10 +1,3 @@
-use std::any;
-use std::cmp::max;
-use std::collections::HashMap;
-use std::convert::TryInto;
-use std::task::Poll;
-
-use anyhow::Result;
 use hex;
 use rand::prelude::*;
 use rand::rngs::StdRng;
@@ -13,7 +6,6 @@ use serde::Deserialize;
 use sha2::{Digest, Sha512};
 use sqlx::prelude::*;
 use sqlx::SqlitePool;
-use tide::Middleware;
 use tide::Redirect;
 
 use crate::templates::users::*;
@@ -195,7 +187,7 @@ pub async fn new_user(mut request: crate::Request) -> tide::Result {
 struct StringId {
     id: String,
 }
-pub async fn delete_user(mut request: crate::Request) -> tide::Result {
+pub async fn delete_user(request: crate::Request) -> tide::Result {
     let user_id = request.param("user_id")?;
     let session = request.session();
     let role: Option<String> = session.get("role");
@@ -261,7 +253,7 @@ pub async fn delete_user(mut request: crate::Request) -> tide::Result {
     user_list(&request.state().db).await
 }
 
-pub async fn change_user_password(mut request: crate::Request) -> tide::Result {
+pub async fn change_user_password(request: crate::Request) -> tide::Result {
     let user_id = request.param("user_id")?;
     let new_password = request.header("HX-Prompt");
     let session = request.session();

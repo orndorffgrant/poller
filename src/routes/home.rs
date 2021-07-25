@@ -1,7 +1,5 @@
 use tide::Redirect;
 
-use crate::templates::home::*;
-
 pub async fn root(request: crate::Request) -> tide::Result {
     let session = request.session();
     let role: Option<String> = session.get("role");
