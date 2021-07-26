@@ -3,9 +3,9 @@
 A simple poll application that is intended to be easy to self-host. This is a personal project that I run at its current version and (lack of) stability, but it may not meet your production standards.
 
 You can see demo polls here:
-- Single submission: https://poller-demo.orndorffgrant.com/poll/TODO_ADD_POLL_ID
-- Multi submission: https://poller-demo.orndorffgrant.com/poll/TODO_ADD_POLL_ID
-- Score submission: https://poller-demo.orndorffgrant.com/poll/TODO_ADD_POLL_ID
+- Single vote: https://poller-demo.orndorffgrant.com/poll/nCj3LC4rp8
+- Multi vote: https://poller-demo.orndorffgrant.com/poll/Pn5UFpE8Xh
+- Score vote: https://poller-demo.orndorffgrant.com/poll/rvrB7nOthd
 
 ## Build Instructions
 
