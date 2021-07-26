@@ -40,3 +40,4 @@ cargo build --release
     * admins cannot create polls - only manage users.
 3. Log in as the non-admin user
 4. Create a poll via the interface.
+5. Send the poll link to anyone you want.
