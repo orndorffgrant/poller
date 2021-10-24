@@ -173,7 +173,8 @@ async fn run(db_path: String) -> tide::Result<SqlitePool> {
         .post(routes::polls::submit_score);
     poll.at("/results").get(routes::polls::results_page);
 
-    app.listen("0.0.0.0:8000").await?;
+    let port = env::var("POLLER_PORT").unwrap_or("8000".to_string());
+    app.listen(format!("0.0.0.0:{}", port)).await?;
 
     Ok(db)
 }

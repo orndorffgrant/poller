@@ -31,7 +31,7 @@ cargo build --release
     ```
     poller run data.db
     ```
-    * This will run on port 8000 (not currently configurable).
+    * This will run on port 8000 (Change by setting the `POLLER_PORT` environment variable).
 4. Set up your reverse proxy that handles TLS to point to poller. I recommend [caddy](https://caddyserver.com/).
 
 ## Using poller
