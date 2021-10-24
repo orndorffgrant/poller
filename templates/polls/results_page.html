@@ -132,10 +132,23 @@
 <script>
 const resizeObserver = new ResizeObserver(entries => {
   for (let entry of entries) {
-    if(entry.contentBoxSize) {
-      entry.target.style.setProperty("--total-width", entry.contentBoxSize.inlineSize + 'px')
-    } else {
-      entry.target.style.setProperty("--total-width", entry.contentRect.width + 'px')
+    let newTotalWidth = null;
+    if (entry.contentBoxSize) {
+      let contentBoxSize = null
+      if (entry.contentBoxSize.inlineSize) {
+        contentBoxSize = entry.contentBoxSize;
+      } else if (entry.contentBoxSize.length > 0) {
+        contentBoxSize = entry.contentBoxSize[0];
+      }
+      if (contentBoxSize) {
+        newTotalWidth = contentBoxSize.inlineSize;
+      }
+    }
+    if (!newTotalWidth && entry.contentRect) {
+      newTotalWidth = entry.contentRect.width;
+    }
+    if (newTotalWidth) {
+      entry.target.style.setProperty("--total-width", newTotalWidth + 'px')
     }
   }
 });
