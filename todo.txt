@@ -1,7 +1,3 @@
-publish version 0.1.0
-
-demo version? at poller-demo.orndorffgrant.com probably. include one visible poll.
-
 ensure db gets closed on exit
 use middleware for user role check/authorizing routes
 update to alpinejs 3

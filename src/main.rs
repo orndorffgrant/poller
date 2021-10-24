@@ -180,7 +180,7 @@ async fn run(db_path: String) -> tide::Result<SqlitePool> {
 }
 
 #[derive(Clap)]
-#[clap(version = "0.1.0")]
+#[clap(version = "0.1.1")]
 struct Opts {
     #[clap(subcommand)]
     subcmd: SubCommand,
