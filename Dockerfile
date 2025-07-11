@@ -4,7 +4,7 @@ WORKDIR /assets-src
 RUN mkdir /assets && deno run --allow-net --allow-write vendor-assets.js
 
 FROM node:24-alpine AS node-builder
-COPY assets-src assets-src
+COPY . .
 WORKDIR /assets-src
 RUN npm install
 RUN mkdir /assets && npm run build-css
